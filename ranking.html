@@ -11,29 +11,52 @@
       font-size: 0.9em;
       padding: 1em;
       background-color: #f7f7f7;
+      overflow-x: hidden;
     }
     header {
       text-align: center;
       margin-bottom: 1em;
+      position: relative;
     }
     header img {
       max-width: 100%;
       width: 600px;
       height: auto;
     }
-    h2 {
-      margin-top: 2em;
-      font-size: 1.2em;
-      text-align: center;
+    .share-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      cursor: pointer;
     }
-    select, input, button {
-      font-size: 1em;
-      padding: 0.4em;
-      vertical-align: middle;
+    .share-button svg {
+      width: 28px;
+      height: 28px;
+      color: #444;
+      transition: transform 0.2s;
     }
-    .view-controls {
-      text-align: center;
+    .share-button:hover svg {
+      transform: scale(1.2);
+      color: #111;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5em;
       margin-top: 1em;
+      flex-wrap: wrap;
+    }
+    .tabs button {
+      background: #222;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background: #555;
     }
     .filter-controls {
       display: flex;
@@ -63,28 +86,39 @@
     .silver { background: silver; font-weight: bold; }
     .bronze { background: #cd7f32; font-weight: bold; }
     .highlight { background: #f0f0f0; }
-    .section { margin-top: 2em; }
+    @keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-1px, 2px); }
+  40% { transform: translate(-3px, -1px); }
+  60% { transform: translate(3px, 1px); }
+  80% { transform: translate(1px, -2px); }
+  100% { transform: translate(0); }
+}
+.glitch {
+  animation: glitch 0.2s;
+}
+
+
+
   </style>
 </head>
 <body>
   <header>
     <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" alt="TO THE MAX 2025 맥스 북부 실기테스트 with 한양대학교">
+    <div class="share-button" onclick="copyShareLink()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2-icon lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+    </div>
   </header>
 
-  <div class="view-controls">
-    <label>
-      보기 선택:
-      <select id="viewSelect" onchange="loadRankings()">
-        <option value="total_all">총점 전체 TOP30</option>
-        <option value="total_gender">총점 남자/여자 TOP30</option>
-        <option value="total_yebi">총점 예비반 TOP30</option>
-        <option value="jump">제자리멀리뛰기</option>
-        <option value="medicineball">메디신볼던지기</option>
-        <option value="shuttle">10m 왕복달리기</option>
-        <option value="sit_reach">좌전굴</option>
-        <option value="back_strength">배근력</option>
-      </select>
-    </label>
+  <div class="tabs">
+    <button onclick="selectTab('total_all')">총점 전체</button>
+    <button onclick="selectTab('total_gender')">총점 남/여</button>
+    <button onclick="selectTab('total_yebi')">예비반</button>
+    <button onclick="selectTab('jump')">제멀</button>
+    <button onclick="selectTab('medicineball')">메디신볼</button>
+    <button onclick="selectTab('shuttle')">10m왕복</button>
+    <button onclick="selectTab('sit_reach')">좌전굴</button>
+    <button onclick="selectTab('back_strength')">배근력</button>
   </div>
 
   <div class="filter-controls">
@@ -94,18 +128,38 @@
 
   <div id="rankings"></div>
 
-  <!-- 기존 스크립트는 그대로 유지 -->
   <script>
     let allData = [];
+    let currentTab = 'total_all';
 
     async function fetchData() {
       const res = await fetch('https://supermax.kr/feed/all-records');
       allData = await res.json();
+
+      const params = new URLSearchParams(window.location.search);
+      const initialTab = params.get('tab');
+      selectTab(initialTab || 'total_all');
+    }
+
+    function selectTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+      const match = Array.from(document.querySelectorAll('.tabs button')).find(b => b.onclick.toString().includes(tab));
+      if (match) match.classList.add('active');
+      glitchEffect();
       loadRankings();
     }
 
+    function copyShareLink() {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', currentTab);
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        alert("✅ 공유 링크가 복사되었습니다!");
+      });
+    }
+
     function loadRankings() {
-      const selected = document.getElementById('viewSelect').value;
+      const selected = currentTab;
       const filterText = document.getElementById('filterInput').value.trim().toLowerCase();
 
       const displayNames = {
@@ -143,8 +197,7 @@
 
       if (event === 'total') {
         if (mode === 'all') {
-          const totalRank = rankify(filtered, event);
-          html += `<div class="section"><h2>${displayNames[event]} 전체 TOP30</h2>${renderTable(totalRank, key)}</div>`;
+          html += `<div class="section"><h2>${displayNames[event]} 전체 TOP30</h2>${renderTable(rankify(filtered, event), key)}</div>`;
         } else if (mode === 'gender') {
           html += `<div class="section"><h2>${displayNames[event]} 남자 TOP30</h2>${renderTable(rankify(male, event), key)}</div>`;
           html += `<div class="section"><h2>${displayNames[event]} 여자 TOP30</h2>${renderTable(rankify(female, event), key)}</div>`;
@@ -177,6 +230,12 @@
           <td>${i + 1}</td><td>${s.exam_number}</td><td>${s.name}</td><td>${s.branch}</td><td>${s.grade}</td><td>${s.gender}</td><td>${s[key]}</td></tr>`).join('')}
       </tbody></table>`;
     }
+    function glitchEffect() {
+  const header = document.querySelector('header img');
+  header.classList.add('glitch');
+  setTimeout(() => header.classList.remove('glitch'), 200);
+}
+
 
     fetchData();
   </script>
