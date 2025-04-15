@@ -148,7 +148,8 @@
       </div>
       <div class="share-button">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2-icon lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
-      </div>
+        <div style="font-size: 0.75em; text-align: center; color: #555; margin-top: 2px;">공유</div>  
+    </div>
 
   </header>
 
@@ -193,12 +194,33 @@
     }
 
     function copyShareLink() {
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', currentTab);
-      navigator.clipboard.writeText(url.toString()).then(() => {
-        alert("✅ 공유 링크가 복사되었습니다!");
-      });
-    }
+  const url = new URL(window.location.href);
+  url.searchParams.set('tab', currentTab);
+  const link = url.toString();
+
+  // ✅ 조건: HTTPS + 브라우저 지원할 경우
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(link).then(() => {
+      alert("✅ 공유 링크가 복사되었습니다!");
+    }).catch(() => fallbackCopy(link));
+  } else {
+    fallbackCopy(link); // ❗ fallback 강제 실행
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.top = "-999px";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+  alert("✅ 공유 링크가 복사되었습니다! (구버전 방식)");
+}
+
 
     function loadRankings() {
       const selected = currentTab;
