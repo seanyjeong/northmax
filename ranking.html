@@ -86,16 +86,53 @@
     .silver { background: silver; font-weight: bold; }
     .bronze { background: #cd7f32; font-weight: bold; }
     .highlight { background: #f0f0f0; }
-    @keyframes glitch {
-  0% { transform: translate(0); }
-  20% { transform: translate(-1px, 2px); }
-  40% { transform: translate(-3px, -1px); }
-  60% { transform: translate(3px, 1px); }
-  80% { transform: translate(1px, -2px); }
-  100% { transform: translate(0); }
+/* 기존 스타일 생략 후 핵심 글리치 파트 */
+.glitch-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: block;
 }
-.glitch {
-  animation: glitch 0.2s;
+.glitch-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  opacity: 1;
+}
+.glitch-img.base {
+  position: relative;
+  z-index: 1;
+}
+.glitch-img.red {
+  mix-blend-mode: screen;
+  filter: drop-shadow(-2px 0 red);
+  z-index: 2;
+  opacity: 0.7;
+}
+.glitch-img.blue {
+  mix-blend-mode: screen;
+  filter: drop-shadow(2px 0 blue);
+  z-index: 3;
+  opacity: 0.7;
+}
+.glitch-active .glitch-img.red {
+  animation: red-glitch 0.3s ease-in-out;
+}
+.glitch-active .glitch-img.blue {
+  animation: blue-glitch 0.3s ease-in-out;
+}
+@keyframes red-glitch {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(-4px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes blue-glitch {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(4px, -2px); }
+  100% { transform: translate(0, 0); }
 }
 
 
@@ -104,10 +141,15 @@
 </head>
 <body>
   <header>
-    <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" alt="TO THE MAX 2025 맥스 북부 실기테스트 with 한양대학교">
-    <div class="share-button" onclick="copyShareLink()">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2-icon lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
-    </div>
+    <div class="glitch-wrapper" onclick="copyShareLink()">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" alt="title" class="glitch-img base">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" class="glitch-img red">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" class="glitch-img blue">
+      </div>
+      <div class="share-button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2-icon lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+      </div>
+
   </header>
 
   <div class="tabs">
@@ -231,9 +273,9 @@
       </tbody></table>`;
     }
     function glitchEffect() {
-  const header = document.querySelector('header img');
-  header.classList.add('glitch');
-  setTimeout(() => header.classList.remove('glitch'), 200);
+  const wrapper = document.querySelector('.glitch-wrapper');
+  wrapper.classList.add('glitch-active');
+  setTimeout(() => wrapper.classList.remove('glitch-active'), 300);
 }
 
 
