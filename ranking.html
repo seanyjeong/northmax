@@ -135,6 +135,11 @@
   100% { transform: translate(0, 0); }
 }
 
+tr.selected {
+  background-color: #8ee1f0 !important;
+  font-weight: bold;
+}
+
 
 
   </style>
@@ -280,6 +285,8 @@ function loadRankings() {
   }
 
   let html = '';
+
+  // ✅ 종목일 경우에도 남/여 분리 출력 추가
   if (mode === 'gender') {
     const maleList = displayList.filter(d => d.gender === '남');
     const femaleList = displayList.filter(d => d.gender === '여');
@@ -294,12 +301,45 @@ function loadRankings() {
 
 
 
-    function rankify(fullList, event) {
+
+function rankify(fullList, event) {
   const key = event === 'total' ? 'total_score' : `${event}_record`;
   const isReverse = ['shuttle'].includes(event);
 
-  // 1. 전체 그룹 정렬 및 rank 부여
-  const sorted = [...fullList].map(s => {
+  let grouped = fullList;
+
+  // ✅ 성별 분리 필요할 때만 나눠서 각각 rank 부여
+  const mode = currentTab.startsWith('total_') ? currentTab.split('_')[1] : 'gender';
+  if ((mode === 'gender' && event === 'total') || event !== 'total') {
+    const males = fullList.filter(d => d.gender === '남');
+    const females = fullList.filter(d => d.gender === '여');
+
+    const sortedM = males.map(s => ({
+      ...s,
+      _value: s[key],
+      _tiebreaker: [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
+    })).sort((a, b) => {
+      if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
+      return isReverse ? a._value - b._value : b._value - a._value;
+    });
+
+    const sortedF = females.map(s => ({
+      ...s,
+      _value: s[key],
+      _tiebreaker: [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
+    })).sort((a, b) => {
+      if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
+      return isReverse ? a._value - b._value : b._value - a._value;
+    });
+
+    sortedM.forEach((s, i) => s.rank = i + 1);
+    sortedF.forEach((s, i) => s.rank = i + 1);
+
+    return [...sortedM, ...sortedF];
+  }
+
+  // ✅ 나머지는 전체 기준 정렬
+  const sorted = [...grouped].map(s => {
     const tiebreaker = event !== 'total'
       ? [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
       : 0;
@@ -310,19 +350,9 @@ function loadRankings() {
   });
 
   sorted.forEach((s, i) => s.rank = i + 1);
-
-  // 2. 필터링은 화면 렌더링용
-  const hasFilter = document.getElementById("filterInput").value.trim().length > 0;
-  const filterText = document.getElementById("filterInput").value.trim().toLowerCase();
-  const filtered = sorted.filter(s => {
-    const matches = !filterText || 
-      s.branch?.toLowerCase().includes(filterText) || 
-      s.name?.toLowerCase().includes(filterText);
-    return s[key] !== null && s[key] !== undefined && matches;
-  });
-
-  return hasFilter ? filtered : sorted.slice(0, 30);
+  return sorted;
 }
+
 
 
 
@@ -341,6 +371,23 @@ function renderTable(list, key) {
 
 
     fetchData();
+    document.getElementById('filterInput').addEventListener('input', (e) => {
+  const text = e.target.value.trim();
+  if (text === '') {
+    loadRankings(); // 🔥 내용이 비었을 때 자동 리셋
+  }
+});
+
+    document.addEventListener('click', function(e) {
+  const tr = e.target.closest('tr');
+  if (!tr || !tr.parentElement.closest('table')) return;
+
+  // 같은 테이블 내에서만 제거 + 적용
+  const tbody = tr.parentElement;
+  tbody.querySelectorAll('tr').forEach(row => row.classList.remove('selected'));
+  tr.classList.add('selected');
+});
+
   </script>
 </body>
 </html>
