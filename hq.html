@@ -8,7 +8,6 @@
   <style>
     body { max-width: 1000px; margin: auto; padding: 2em; text-align: center; }
     h2 { margin-bottom: 1em; }
-    select { padding: 0.5em; margin-bottom: 1em; }
     table { width: 100%; margin-top: 1em; border-collapse: collapse; }
     th, td { padding: 0.6em; border-bottom: 1px solid #ccc; text-align: center; }
     .stat-box {
@@ -19,75 +18,71 @@
       background: #f5f5f5;
       padding: 1em;
       border-radius: 8px;
-      flex: 1 1 200px;
+      flex: 1 1 180px;
+    }
+    .section-title {
+      margin-top: 2em;
+      font-size: 1.3em;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 <h2>본부 출결 대시보드</h2>
 
-<select id="branchSelect">
-  <option value="">지점 선택</option>
-  <option value="일산">일산</option>
-  <option value="행신">행신</option>
-</select>
-
+<!-- ✅ 전체 요약 -->
 <div class="stat-box">
-  <div class="stat-card"><strong>✅ 최종인원</strong><br><span id="totalCount">-</span></div>
-  <div class="stat-card"><strong>✅ 출석인원</strong><br><span id="attendedCount">-</span></div>
-  <div class="stat-card"><strong>❌ 결시인원</strong><br><span id="absentCount">-</span></div>
-  <div class="stat-card"><strong>➕ 추가인원</strong><br><span id="newCount">-</span></div>
-  <div class="stat-card"><strong>🔁 대체인원</strong><br><span id="swapCount">-</span></div>
+  <div class="stat-card"><strong>✅ 전체 인원</strong><br><span id="allTotal">-</span></div>
+  <div class="stat-card"><strong>✅ 출석</strong><br><span id="allAttended">-</span></div>
+  <div class="stat-card"><strong>❌ 결시</strong><br><span id="allAbsent">-</span></div>
+  <div class="stat-card"><strong>➕ 신규</strong><br><span id="allNew">-</span></div>
+  <div class="stat-card"><strong>🔁 대체</strong><br><span id="allSwap">-</span></div>
 </div>
 
-<table id="detailTable">
+<!-- ✅ 지점별 요약 테이블 -->
+<div class="section-title">지점별 요약</div>
+<table>
   <thead>
-    <tr>
-      <th>수험번호</th><th>이름</th><th>학교</th><th>학년</th><th>성별</th><th>출석</th><th>비고</th>
-    </tr>
+    <tr><th>지점</th><th>인원</th><th>출석</th><th>결시</th><th>신규</th><th>대체</th></tr>
   </thead>
-  <tbody id="detailBody"></tbody>
+  <tbody id="branchTable"></tbody>
 </table>
 
 <script>
-const branchSelect = document.getElementById('branchSelect');
-const totalCount = document.getElementById('totalCount');
-const attendedCount = document.getElementById('attendedCount');
-const absentCount = document.getElementById('absentCount');
-const newCount = document.getElementById('newCount');
-const swapCount = document.getElementById('swapCount');
-const detailBody = document.getElementById('detailBody');
+async function loadSummary() {
+  try {
+    const res = await fetch("https://supermax.kr/feed/dashboard-summary");
+    const json = await res.json();
 
-branchSelect.addEventListener('change', async () => {
-  const branch = branchSelect.value;
-  if (!branch) return;
+    // 전체 요약
+    document.getElementById("allTotal").innerText = json.total;
+    document.getElementById("allAttended").innerText = json.attended;
+    document.getElementById("allAbsent").innerText = json.absent;
+    document.getElementById("allNew").innerText = json.new_count;
+    document.getElementById("allSwap").innerText = json.swap_count;
 
-  // 전체 정보 불러오기
-  const res = await fetch(`https://supermax.kr/feed/dashboard?branch=${branch}`);
-  const json = await res.json();
+    // 지점별 테이블
+    const tbody = document.getElementById("branchTable");
+    tbody.innerHTML = "";
+    json.branches.forEach(b => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${b.branch}</td>
+        <td>${b.total}</td>
+        <td>${b.attended}</td>
+        <td>${b.absent}</td>
+        <td>${b.new_count}</td>
+        <td>${b.swap_count}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    alert("❌ 요약 불러오기 실패");
+    console.error(e);
+  }
+}
 
-  totalCount.innerText = json.total;
-  attendedCount.innerText = json.attended;
-  absentCount.innerText = json.absent;
-  newCount.innerText = json.new_count;
-  swapCount.innerText = json.swap_count;
-
-  // 상세 테이블
-  detailBody.innerHTML = '';
-  json.students.forEach(s => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${s.exam_number}</td>
-      <td>${s.name}</td>
-      <td>${s.school}</td>
-      <td>${s.grade}</td>
-      <td>${s.gender}</td>
-      <td>${s.attended === 1 ? '출석' : '결시'}</td>
-      <td>${s.note || ''}</td>
-    `;
-    detailBody.appendChild(tr);
-  });
-});
+loadSummary();
 </script>
 </body>
 </html>
