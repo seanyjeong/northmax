@@ -237,78 +237,102 @@ function fallbackCopy(text) {
 }
 
 
-    function loadRankings() {
-      const selected = currentTab;
-      const filterText = document.getElementById('filterInput').value.trim().toLowerCase();
+function loadRankings() {
+  const selected = currentTab;
+  const filterText = document.getElementById('filterInput').value.trim().toLowerCase();
 
-      const displayNames = {
-        total: '총점',
-        jump: '제자리멀리뛰기',
-        medicineball: '메디신볼던지기',
-        shuttle: '10m 왕복달리기',
-        sit_reach: '좌전굴',
-        back_strength: '배근력'
-      };
+  const displayNames = {
+    total: '총점',
+    jump: '제자리멀리뛰기',
+    medicineball: '메디신볼던지기',
+    shuttle: '10m 왕복달리기',
+    sit_reach: '좌전굴',
+    back_strength: '배근력'
+  };
 
-      let event = selected;
-      let mode = 'gender';
-      if (selected.startsWith('total_')) {
-        event = 'total';
-        mode = selected.split('_')[1];
-      }
+  let event = selected;
+  let mode = 'gender';
+  if (selected.startsWith('total_')) {
+    event = 'total';
+    mode = selected.split('_')[1];
+  }
 
-      const key = event === 'total' ? 'total_score' : `${event}_record`;
-      const isReverse = ['shuttle'].includes(event);
+  const key = event === 'total' ? 'total_score' : `${event}_record`;
 
-      const filtered = allData.filter(d => {
-        const hasValue = d[key] !== null && d[key] !== undefined;
-        const matchesFilter = !filterText ||
-          d.branch?.toLowerCase().includes(filterText) ||
-          d.name?.toLowerCase().includes(filterText);
-        return hasValue && matchesFilter;
-      });
+  const baseGroup = allData.filter(d => {
+    const validScore = d[key] !== null && d[key] !== undefined;
+    if (!validScore) return false;
+    if (event !== 'total' && !d.hasOwnProperty(`${event}_record`)) return false;
+    if (mode === 'gender') return d.gender === '남' || d.gender === '여';
+    if (mode === 'yebi') return parseInt(d.grade) <= 2;
+    return true;
+  });
 
-      const male = filtered.filter(d => d.gender === '남');
-      const female = filtered.filter(d => d.gender === '여');
-      const yebi = filtered.filter(d => parseInt(d.grade) <= 2);
+  const rankedGroup = rankify(baseGroup, event);
 
-      let html = '';
+  let displayList = rankedGroup;
+  if (filterText) {
+    displayList = rankedGroup.filter(d => {
+      return d.branch?.toLowerCase().includes(filterText) || d.name?.toLowerCase().includes(filterText);
+    });
+  } else {
+    displayList = rankedGroup.slice(0, 30);
+  }
 
-      if (event === 'total') {
-        if (mode === 'all') {
-          html += `<div class="section"><h2>${displayNames[event]} 전체 TOP30</h2>${renderTable(rankify(filtered, event), key)}</div>`;
-        } else if (mode === 'gender') {
-          html += `<div class="section"><h2>${displayNames[event]} 남자 TOP30</h2>${renderTable(rankify(male, event), key)}</div>`;
-          html += `<div class="section"><h2>${displayNames[event]} 여자 TOP30</h2>${renderTable(rankify(female, event), key)}</div>`;
-        } else if (mode === 'yebi') {
-          html += `<div class="section"><h2>${displayNames[event]} 예비반 TOP30 (1~2학년)</h2>${renderTable(rankify(yebi, event), key)}</div>`;
-        }
-      } else {
-        html += `<div class="section"><h2>${displayNames[event]} 남자 TOP30</h2>${renderTable(rankify(male, event), key)}</div>`;
-        html += `<div class="section"><h2>${displayNames[event]} 여자 TOP30</h2>${renderTable(rankify(female, event), key)}</div>`;
-      }
+  let html = '';
+  if (mode === 'gender') {
+    const maleList = displayList.filter(d => d.gender === '남');
+    const femaleList = displayList.filter(d => d.gender === '여');
+    html += `<div class="section"><h2>${displayNames[event]} 남자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(maleList, key)}</div>`;
+    html += `<div class="section"><h2>${displayNames[event]} 여자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(femaleList, key)}</div>`;
+  } else {
+    html += `<div class="section"><h2>${displayNames[event]} ${mode === 'yebi' ? '예비반' : '전체'} ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(displayList, key)}</div>`;
+  }
 
-      document.getElementById('rankings').innerHTML = html;
-    }
+  document.getElementById('rankings').innerHTML = html;
+}
 
-    function rankify(list, event) {
-      const key = event === 'total' ? 'total_score' : `${event}_record`;
-      const isReverse = ['shuttle'].includes(event);
-      return [...list].map(s => {
-        const tiebreaker = event !== 'total' ? [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0) : 0;
-        return { ...s, _value: s[key], _tiebreaker: tiebreaker };
-      }).sort((a, b) => {
-        if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
-        return isReverse ? a._value - b._value : b._value - a._value;
-      }).slice(0, 30);
-    }
 
-    function renderTable(list, key) {
-      return `<table><thead><tr><th>순위</th><th>수험번호</th><th>이름</th><th>지점</th><th>학년</th><th>성별</th><th>${key === 'total_score' ? '점수' : '기록'}</th></tr></thead><tbody>
-        ${list.map((s, i) => `<tr class="${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : i < 10 ? 'highlight' : ''}">
-          <td>${i + 1}</td><td>${s.exam_number}</td><td>${s.name}</td><td>${s.branch}</td><td>${s.grade}</td><td>${s.gender}</td><td>${s[key]}</td></tr>`).join('')}
-      </tbody></table>`;
-    }
+
+    function rankify(fullList, event) {
+  const key = event === 'total' ? 'total_score' : `${event}_record`;
+  const isReverse = ['shuttle'].includes(event);
+
+  // 1. 전체 그룹 정렬 및 rank 부여
+  const sorted = [...fullList].map(s => {
+    const tiebreaker = event !== 'total'
+      ? [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
+      : 0;
+    return { ...s, _value: s[key], _tiebreaker: tiebreaker };
+  }).sort((a, b) => {
+    if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
+    return isReverse ? a._value - b._value : b._value - a._value;
+  });
+
+  sorted.forEach((s, i) => s.rank = i + 1);
+
+  // 2. 필터링은 화면 렌더링용
+  const hasFilter = document.getElementById("filterInput").value.trim().length > 0;
+  const filterText = document.getElementById("filterInput").value.trim().toLowerCase();
+  const filtered = sorted.filter(s => {
+    const matches = !filterText || 
+      s.branch?.toLowerCase().includes(filterText) || 
+      s.name?.toLowerCase().includes(filterText);
+    return s[key] !== null && s[key] !== undefined && matches;
+  });
+
+  return hasFilter ? filtered : sorted.slice(0, 30);
+}
+
+
+
+function renderTable(list, key) {
+  return `<table><thead><tr><th>순위</th><th>수험번호</th><th>이름</th><th>지점</th><th>학년</th><th>성별</th><th>${key === 'total_score' ? '점수' : '기록'}</th></tr></thead><tbody>
+    ${list.map(s => `<tr class="${s.rank === 1 ? 'gold' : s.rank === 2 ? 'silver' : s.rank === 3 ? 'bronze' : s.rank <= 10 ? 'highlight' : ''}">
+      <td>${s.rank}</td><td>${s.exam_number}</td><td>${s.name}</td><td>${s.branch}</td><td>${s.grade}</td><td>${s.gender}</td><td>${s[key]}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
     function glitchEffect() {
   const wrapper = document.querySelector('.glitch-wrapper');
   wrapper.classList.add('glitch-active');
