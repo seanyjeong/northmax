@@ -7,9 +7,19 @@
   <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css" rel="stylesheet" />
   <style>
     body {
+      font-family: 'Pretendard', sans-serif;
       font-size: 0.9em;
       padding: 1em;
-      background: #fff;
+      background-color: #f7f7f7;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+    header img {
+      max-width: 100%;
+      width: 600px;
+      height: auto;
     }
     h2 {
       margin-top: 2em;
@@ -36,20 +46,31 @@
       width: 100%;
       font-size: 0.85em;
       margin-top: 0.5em;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    th {
+      background: #111;
+      color: #fff;
     }
     th, td {
       text-align: center;
-      padding: 0.3em;
+      padding: 0.6em;
     }
     .gold { background: gold; font-weight: bold; }
     .silver { background: silver; font-weight: bold; }
     .bronze { background: #cd7f32; font-weight: bold; }
-    .highlight { background: #e0f7fa; }
+    .highlight { background: #f0f0f0; }
     .section { margin-top: 2em; }
   </style>
 </head>
 <body>
-  <h1 style="text-align: center;">2025맥스북부실기테스트</h1>
+  <header>
+    <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" alt="TO THE MAX 2025 맥스 북부 실기테스트 with 한양대학교">
+  </header>
+
   <div class="view-controls">
     <label>
       보기 선택:
@@ -73,6 +94,7 @@
 
   <div id="rankings"></div>
 
+  <!-- 기존 스크립트는 그대로 유지 -->
   <script>
     let allData = [];
 
@@ -122,47 +144,16 @@
       if (event === 'total') {
         if (mode === 'all') {
           const totalRank = rankify(filtered, event);
-          html += `
-            <div class="section">
-              <h2>${displayNames[event]} 전체 TOP30</h2>
-              ${renderTable(totalRank, key)}
-            </div>
-          `;
+          html += `<div class="section"><h2>${displayNames[event]} 전체 TOP30</h2>${renderTable(totalRank, key)}</div>`;
         } else if (mode === 'gender') {
-          const maleRank = rankify(male, event);
-          const femaleRank = rankify(female, event);
-          html += `
-            <div class="section">
-              <h2>${displayNames[event]} 남자 TOP30</h2>
-              ${renderTable(maleRank, key)}
-            </div>
-            <div class="section">
-              <h2>${displayNames[event]} 여자 TOP30</h2>
-              ${renderTable(femaleRank, key)}
-            </div>
-          `;
+          html += `<div class="section"><h2>${displayNames[event]} 남자 TOP30</h2>${renderTable(rankify(male, event), key)}</div>`;
+          html += `<div class="section"><h2>${displayNames[event]} 여자 TOP30</h2>${renderTable(rankify(female, event), key)}</div>`;
         } else if (mode === 'yebi') {
-          const yebiRank = rankify(yebi, event);
-          html += `
-            <div class="section">
-              <h2>${displayNames[event]} 예비반 TOP30 (1~2학년)</h2>
-              ${renderTable(yebiRank, key)}
-            </div>
-          `;
+          html += `<div class="section"><h2>${displayNames[event]} 예비반 TOP30 (1~2학년)</h2>${renderTable(rankify(yebi, event), key)}</div>`;
         }
       } else {
-        const maleRank = rankify(male, event);
-        const femaleRank = rankify(female, event);
-        html += `
-          <div class="section">
-            <h2>${displayNames[event]} 남자 TOP30</h2>
-            ${renderTable(maleRank, key)}
-          </div>
-          <div class="section">
-            <h2>${displayNames[event]} 여자 TOP30</h2>
-            ${renderTable(femaleRank, key)}
-          </div>
-        `;
+        html += `<div class="section"><h2>${displayNames[event]} 남자 TOP30</h2>${renderTable(rankify(male, event), key)}</div>`;
+        html += `<div class="section"><h2>${displayNames[event]} 여자 TOP30</h2>${renderTable(rankify(female, event), key)}</div>`;
       }
 
       document.getElementById('rankings').innerHTML = html;
@@ -171,46 +162,20 @@
     function rankify(list, event) {
       const key = event === 'total' ? 'total_score' : `${event}_record`;
       const isReverse = ['shuttle'].includes(event);
-
-      const withTieBreaker = [...list].map(s => {
-        let tiebreaker = 0;
-        if (event !== 'total') {
-          const scores = [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0];
-          tiebreaker = scores.reduce((a, b) => a + b, 0);
-        }
+      return [...list].map(s => {
+        const tiebreaker = event !== 'total' ? [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0) : 0;
         return { ...s, _value: s[key], _tiebreaker: tiebreaker };
-      });
-
-      return withTieBreaker.sort((a, b) => {
+      }).sort((a, b) => {
         if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
         return isReverse ? a._value - b._value : b._value - a._value;
       }).slice(0, 30);
     }
 
     function renderTable(list, key) {
-      return `
-        <table>
-          <thead>
-            <tr><th>순위</th><th>수험번호</th><th>이름</th><th>지점</th><th>학년</th><th>성별</th><th>${key === 'total_score' ? '점수' : '기록'}</th></tr>
-          </thead>
-          <tbody>
-            ${list.map((s, i) => {
-              const medalClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : i < 10 ? 'highlight' : '';
-              return `
-                <tr class="${medalClass}">
-                  <td>${i + 1}</td>
-                  <td>${s.exam_number}</td>
-                  <td>${s.name}</td>
-                  <td>${s.branch}</td>
-                  <td>${s.grade}</td>
-                  <td>${s.gender}</td>
-                  <td>${s[key]}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      `;
+      return `<table><thead><tr><th>순위</th><th>수험번호</th><th>이름</th><th>지점</th><th>학년</th><th>성별</th><th>${key === 'total_score' ? '점수' : '기록'}</th></tr></thead><tbody>
+        ${list.map((s, i) => `<tr class="${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : i < 10 ? 'highlight' : ''}">
+          <td>${i + 1}</td><td>${s.exam_number}</td><td>${s.name}</td><td>${s.branch}</td><td>${s.grade}</td><td>${s.gender}</td><td>${s[key]}</td></tr>`).join('')}
+      </tbody></table>`;
     }
 
     fetchData();
