@@ -11,15 +11,33 @@
       font-size: 0.9em;
       padding: 1em;
       background-color: #f7f7f7;
+      overflow-x: hidden;
     }
     header {
       text-align: center;
       margin-bottom: 1em;
+      position: relative;
     }
     header img {
       max-width: 100%;
       width: 600px;
       height: auto;
+    }
+    .share-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      cursor: pointer;
+    }
+    .share-button svg {
+      width: 28px;
+      height: 28px;
+      color: #444;
+      transition: transform 0.2s;
+    }
+    .share-button:hover svg {
+      transform: scale(1.2);
+      color: #111;
     }
     .tabs {
       display: flex;
@@ -68,12 +86,70 @@
     .silver { background: silver; font-weight: bold; }
     .bronze { background: #cd7f32; font-weight: bold; }
     .highlight { background: #f0f0f0; }
-    .section { margin-top: 2em; }
+/* 기존 스타일 생략 후 핵심 글리치 파트 */
+.glitch-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: block;
+}
+.glitch-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  opacity: 1;
+}
+.glitch-img.base {
+  position: relative;
+  z-index: 1;
+}
+.glitch-img.red {
+  mix-blend-mode: screen;
+  filter: drop-shadow(-2px 0 red);
+  z-index: 2;
+  opacity: 0.7;
+}
+.glitch-img.blue {
+  mix-blend-mode: screen;
+  filter: drop-shadow(2px 0 blue);
+  z-index: 3;
+  opacity: 0.7;
+}
+.glitch-active .glitch-img.red {
+  animation: red-glitch 0.3s ease-in-out;
+}
+.glitch-active .glitch-img.blue {
+  animation: blue-glitch 0.3s ease-in-out;
+}
+@keyframes red-glitch {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(-4px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes blue-glitch {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(4px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+
+
+
   </style>
 </head>
 <body>
   <header>
-    <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" alt="TO THE MAX 2025 맥스 북부 실기테스트 with 한양대학교">
+    <div class="glitch-wrapper" onclick="copyShareLink()">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" alt="title" class="glitch-img base">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" class="glitch-img red">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" class="glitch-img blue">
+      </div>
+      <div class="share-button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2-icon lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+      </div>
+
   </header>
 
   <div class="tabs">
@@ -101,14 +177,27 @@
     async function fetchData() {
       const res = await fetch('https://supermax.kr/feed/all-records');
       allData = await res.json();
-      selectTab('total_all');
+
+      const params = new URLSearchParams(window.location.search);
+      const initialTab = params.get('tab');
+      selectTab(initialTab || 'total_all');
     }
 
     function selectTab(tab) {
       currentTab = tab;
       document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.tabs button[onclick*="${tab}"]`).classList.add('active');
+      const match = Array.from(document.querySelectorAll('.tabs button')).find(b => b.onclick.toString().includes(tab));
+      if (match) match.classList.add('active');
+      glitchEffect();
       loadRankings();
+    }
+
+    function copyShareLink() {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', currentTab);
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        alert("✅ 공유 링크가 복사되었습니다!");
+      });
     }
 
     function loadRankings() {
@@ -183,6 +272,12 @@
           <td>${i + 1}</td><td>${s.exam_number}</td><td>${s.name}</td><td>${s.branch}</td><td>${s.grade}</td><td>${s.gender}</td><td>${s[key]}</td></tr>`).join('')}
       </tbody></table>`;
     }
+    function glitchEffect() {
+  const wrapper = document.querySelector('.glitch-wrapper');
+  wrapper.classList.add('glitch-active');
+  setTimeout(() => wrapper.classList.remove('glitch-active'), 300);
+}
+
 
     fetchData();
   </script>
