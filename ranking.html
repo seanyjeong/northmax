@@ -197,18 +197,27 @@
   const url = new URL(window.location.href);
   url.searchParams.set('tab', currentTab);
   const link = url.toString();
+  console.log("📎 공유 링크 생성됨:", link);
 
-  // ✅ 조건: HTTPS + 브라우저 지원할 경우
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(link).then(() => {
-      alert("✅ 공유 링크가 복사되었습니다!");
-    }).catch(() => fallbackCopy(link));
+    console.log("✅ 클립보드 API 사용 가능");
+    navigator.clipboard.writeText(link)
+      .then(() => {
+        console.log("✅ 클립보드 복사 성공");
+        alert("✅ 공유 링크가 복사되었습니다!");
+      })
+      .catch((err) => {
+        console.warn("❌ 클립보드 복사 실패, fallback 시도:", err);
+        fallbackCopy(link);
+      });
   } else {
-    fallbackCopy(link); // ❗ fallback 강제 실행
+    console.warn("❗ navigator.clipboard 지원 안됨 → fallback 실행");
+    fallbackCopy(link);
   }
 }
 
 function fallbackCopy(text) {
+  console.log("⚙️ fallback 복사 시도 중");
   const textarea = document.createElement("textarea");
   textarea.value = text;
   textarea.style.position = "fixed";
@@ -216,9 +225,15 @@ function fallbackCopy(text) {
   document.body.appendChild(textarea);
   textarea.focus();
   textarea.select();
-  document.execCommand("copy");
+  try {
+    const success = document.execCommand("copy");
+    console.log("📋 fallback 복사 결과:", success);
+    alert("✅ 공유 링크가 복사되었습니다! (fallback)");
+  } catch (err) {
+    console.error("❌ fallback 복사 실패:", err);
+    alert("❌ 공유 실패. 수동 복사 부탁드립니다.");
+  }
   document.body.removeChild(textarea);
-  alert("✅ 공유 링크가 복사되었습니다! (구버전 방식)");
 }
 
 
