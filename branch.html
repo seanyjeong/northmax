@@ -2,232 +2,669 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>지점 출결</title>
-  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
-    body { max-width: 800px; margin: auto; text-align: center; font-size: 0.95em; }
-    table { width: 100%; margin-top: 1em; font-size: 0.9em; }
-    th, td { padding: 0.4em; border-bottom: 1px solid #ccc; }
-    .attended { background: #d9fdd3; }
-    .absent { background: #ffe0e0; }
-    .action-btn { padding: 0.3em 0.6em; margin-left: 0.3em; font-size: 0.85em; }
-    #summary { margin-top: 1em; font-weight: bold; font-size: 0.95em; }
+    :root {
+      --primary: #6750A4;
+      --on-primary: #FFFFFF;
+      --primary-container: #EADDFF;
+      --secondary: #625B71;
+      --surface: #FFFBFE;
+      --surface-variant: #E7E0EC;
+      --error: #B3261E;
+      --outline: #79747E;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    
+    body {
+      background-color: #f5f5f5;
+      color: #1C1B1F;
+      line-height: 1.5;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+    }
+    
+    .app-bar {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .app-bar h1 {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+    
+    .container {
+      padding: 16px;
+      max-width: 100%;
+    }
+    
+    .card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .summary-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px;
+    }
+    
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    
+    .summary-label {
+      font-size: 0.75rem;
+      color: var(--secondary);
+    }
+    
+    .attended-bg {
+      background-color: #E7F6E9;
+    }
+    
+    .absent-bg {
+      background-color: #FFEBEE;
+    }
+    
+    .unchecked-bg {
+      background-color: #FFF8E1;
+    }
+    
+    .student-list {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .student-list th {
+  text-align: left;
+  padding: 12px 8px;
+  font-size: 0.75rem;
+  color: var(--secondary);
+  position: sticky;
+  top: 0px;
+  background-color: #f0f0f5;
+  z-index: 1;
+
+  /* ✅ 구분선 강조 */
+  border-bottom: 2px solid #000000;
+}
+
+    
+    .student-list td {
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--surface-variant);
+    }
+    
+    .student-row.attended {
+      background-color: #E7F6E9;
+    }
+    
+    .student-row.absent {
+      background-color: #FFEBEE;
+    }
+    
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+    }
+    
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 500;
+      font-size: 0.875rem;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: var(--on-primary);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+    
+    .btn-icon {
+      margin-right: 8px;
+    }
+    
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    .modal.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .modal-content {
+      background-color: var(--surface);
+      width: 90%;
+      max-width: 400px;
+      border-radius: 12px;
+      padding: 24px;
+      transform: translateY(20px);
+      transition: transform 0.3s;
+    }
+    
+    .modal.active .modal-content {
+      transform: translateY(0);
+    }
+    
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    
+    .input-field {
+      margin-bottom: 16px;
+    }
+    
+    .input-field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+      color: var(--secondary);
+    }
+    
+    .input-field input, .input-field select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--outline);
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    
+    .chip {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .chip.attended {
+      background-color: #E7F6E9;
+      color: #2E7D32;
+    }
+    
+    .chip.absent {
+      background-color: #FFEBEE;
+      color: #C62828;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--secondary);
+    }
+    
+    .empty-state .material-icons {
+      font-size: 48px;
+      color: var(--surface-variant);
+      margin-bottom: 16px;
+    }
+    
+    @media (max-width: 480px) {
+      .student-list td:nth-child(3),
+      .student-list th:nth-child(3),
+      .student-list td:nth-child(4),
+      .student-list th:nth-child(4) {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
-<h2 id="pageTitle">지점 출결</h2>
-<div id="summary"></div>
-<div id="branch-section" style="display:none">
-  <table>
-    <thead>
-      <tr><th>수험번호</th><th>이름</th><th>학교</th><th>학년</th><th>성별</th><th>출결</th><th>비고</th></tr>
-    </thead>
-    <tbody id="studentTable"></tbody>
-  </table>
-  <button onclick="submitNew()">➕ 신규 추가등록</button>
- 
+<div class="app-bar">
+  <h1 id="pageTitle">지점 출결 관리</h1>
+</div>
+
+<div class="container">
+  <div id="login-section">
+    <div class="card">
+      <h2 style="margin-bottom: 16px;">지점 로그인</h2>
+      <div class="input-field">
+        <label for="branchInput">지점명</label>
+        <input type="text" id="branchInput" placeholder="지점명을 입력하세요">
+      </div>
+      <div class="input-field">
+        <label for="pwInput">비밀번호</label>
+        <input type="password" id="pwInput" placeholder="비밀번호를 입력하세요">
+      </div>
+      <button class="btn btn-primary" onclick="login()" style="width: 100%;">
+        <span class="material-icons btn-icon">login</span>
+        로그인
+      </button>
+      <p id="loginError" style="color: var(--error); margin-top: 8px; font-size: 0.875rem;"></p>
+    </div>
+  </div>
+
+  <div id="branch-section" style="display: none;">
+    <div class="card summary-card" id="summary">
+      <!-- 동적으로 생성됨 -->
+    </div>
+    
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="font-size: 1.125rem;">학생 목록</h2>
+        <button class="btn btn-primary" onclick="submitNew()">
+          <span class="material-icons btn-icon">person_add</span>
+          추가
+        </button>
+      </div>
+      
+      <div style="overflow-x: auto;">
+        <table class="student-list">
+          <thead>
+            <tr>
+              <th>수험번호</th>
+              <th>이름</th>
+              <th>학교</th>
+              <th>학년</th>
+              <th>출결</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="studentTable">
+            <!-- 동적으로 생성됨 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- 로그인 모달 -->
-<div id="loginModal">
-  <h3>지점 로그인</h3>
-  <input placeholder="지점명" id="branchInput" />
-  <input placeholder="비밀번호" type="password" id="pwInput" />
-  <button onclick="login()">확인</button>
-  <p id="loginError" class="error"></p>
+<!-- 대체자 등록 모달 -->
+<div class="modal" id="swapModal">
+  <div class="modal-content">
+    <h3 class="modal-title">대체자 등록</h3>
+    <div class="input-field">
+      <label for="swapName">이름</label>
+      <input type="text" id="swapName" placeholder="대체자 이름" autocomplete="off">
+    </div>
+    <div class="input-field">
+      <label for="swapSchool">학교</label>
+      <input type="text" id="swapSchool" placeholder="학교명" autocomplete="off">
+    </div>
+    <div class="input-field">
+      <label for="swapGrade">학년</label>
+      <input type="text" id="swapGrade" placeholder="학년" autocomplete="off">
+    </div>
+    <div class="input-field">
+      <label for="swapGender" >성별</label>
+      <select id="swapGender" >
+        <option value="">선택하세요</option>
+        <option value="남">남</option>
+        <option value="여">여</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('swapModal')">취소</button>
+      <button class="btn btn-primary" onclick="submitSwap()">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 신규 등록 모달 -->
+<div class="modal" id="newModal">
+  <div class="modal-content">
+    <h3 class="modal-title">신규 등록</h3>
+    <div class="input-field">
+      <label for="newName">이름</label>
+      <input type="text" id="newName" placeholder="이름" autocomplete="off">
+    </div>
+    <div class="input-field">
+      <label for="newSchool">학교</label>
+      <input type="text" id="newSchool" placeholder="학교명" autocomplete="off">
+    </div>
+    <div class="input-field">
+      <label for="newGrade">학년</label>
+      <input type="text" id="newGrade" placeholder="학년" autocomplete="off">
+    </div>
+    <div class="input-field">
+      <label for="newGender">성별</label>
+      <select id="newGender">
+        <option value="">선택하세요</option>
+        <option value="남">남</option>
+        <option value="여">여</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('newModal')">취소</button>
+      <button class="btn btn-primary" onclick="submitNewStudent()">등록</button>
+    </div>
+  </div>
 </div>
 
 <script>
-const loginModal = document.getElementById('loginModal');
-const branchSection = document.getElementById('branch-section');
-const studentTable = document.getElementById('studentTable');
-const summary = document.getElementById('summary');
-
 const branchMap = { '일산': '1234', '행신': '1222' };
+let currentBranch = '';
+let swapExamNumber = '';
+
+// 초기화
+document.addEventListener('DOMContentLoaded', () => {
+  // 모바일에서 입력 시 화면 확대 방지
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    el.addEventListener('focus', () => {
+      document.querySelector('meta[name=viewport]').content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    });
+  });
+});
 
 function login() {
   const branch = document.getElementById('branchInput').value.trim();
   const pw = document.getElementById('pwInput').value.trim();
+  
   if (branchMap[branch] === pw) {
-    sessionStorage.setItem('branch', branch);
-    document.getElementById('pageTitle').innerText = `${branch} 북부테스트 출결`;
-    loginModal.style.display = 'none';
-    branchSection.style.display = 'block';
-    loadStudents(branch);
+    currentBranch = branch;
+    document.getElementById('pageTitle').textContent = `${branch} 맥스체대입시 북부테스트 출결 관리`;
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('branch-section').style.display = 'block';
+    loadStudents();
   } else {
-    document.getElementById('loginError').innerText = '지점명 또는 비밀번호 오류';
+    document.getElementById('loginError').textContent = '지점명 또는 비밀번호가 올바르지 않습니다.';
   }
 }
 
-async function loadStudents(branch) {
-  const res = await fetch(`https://supermax.kr/feed/branch-students?branch=${branch}`);
-  const list = await res.json();
-  let attended = 0, absent = 0, unchecked = 0;
-  studentTable.innerHTML = '';
-
-  list.forEach(s => {
-    const tr = document.createElement('tr');
-    if (s.attended === 1) attended++;
-    else if (s.attended === 0) absent++;
-    else unchecked++;
-
-    tr.className = s.attended === 1 ? 'attended' : (s.attended === 0 ? 'absent' : '');
-
-    tr.innerHTML = `
-      <td>${s.record_group}조 (${s.exam_number})</td>
-      <td>${s.name}</td>
-      <td>${s.school}</td>
-      <td>${s.grade}</td>
-      <td>${s.gender}</td>
-      <td>
-        <input type="checkbox" ${s.attended === 1 ? 'checked' : ''}
-          onchange="toggleAttendance('${s.exam_number}', this.checked)" />
-      </td>
-      <td>
-        ${(s.attended === 0 || s.attended === null) ? `<button class='action-btn' onclick="openSwap('${s.exam_number}')">대체자 등록</button>` : ''}
-      </td>
+async function loadStudents() {
+  try {
+    const res = await fetch(`https://supermax.kr/feed/branch-students?branch=${currentBranch}`);
+    const list = await res.json();
+    
+    let attended = 0, absent = 0, unchecked = 0;
+    const studentTable = document.getElementById('studentTable');
+    studentTable.innerHTML = '';
+    
+    if (list.length === 0) {
+      studentTable.innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <span class="material-icons">group_off</span>
+              <p>등록된 학생이 없습니다</p>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      list.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.className = 'student-row';
+        
+        if (s.attended === 1) {
+          attended++;
+          tr.classList.add('attended');
+        } else if (s.attended === 0) {
+          absent++;
+          tr.classList.add('absent');
+        } else {
+          unchecked++;
+        }
+        
+        tr.innerHTML = `
+          <td>${s.exam_number}</td>
+          <td>${s.name}</td>
+          <td>${s.school}</td>
+          <td>${s.grade}</td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" ${s.attended === 1 ? 'checked' : ''} 
+                onchange="toggleAttendance('${s.exam_number}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </td>
+          <td>
+            ${(s.attended === 0 || s.attended === null) ? `
+              <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem;" 
+                onclick="openSwapModal('${s.exam_number}')">
+                대체
+              </button>
+            ` : ''}
+          </td>
+        `;
+        studentTable.appendChild(tr);
+      });
+    }
+    
+    // 요약 카드 업데이트
+    document.getElementById('summary').innerHTML = `
+      <div class="summary-item">
+        <div class="summary-value">${list.length}</div>
+        <div class="summary-label">전체 인원</div>
+      </div>
+      <div class="summary-item attended-bg">
+        <div class="summary-value">${attended}</div>
+        <div class="summary-label">출석</div>
+      </div>
+      <div class="summary-item absent-bg">
+        <div class="summary-value">${absent}</div>
+        <div class="summary-label">결시</div>
+      </div>
+      <div class="summary-item unchecked-bg">
+        <div class="summary-value">${unchecked}</div>
+        <div class="summary-label">미체크</div>
+      </div>
     `;
-    studentTable.appendChild(tr);
-  });
-
-  summary.innerHTML = `✅ 최종인원: ${list.length}명 | ✅ 출석: ${attended}명 | ❌ 결시: ${absent}명 | ⏳ 미체크: ${unchecked}명`;
-}
-
-function showAddForm() {
-  document.getElementById('addForm').style.display = 'block';
-}
-
-async function submitNew() {
-  const branch = sessionStorage.getItem('branch');
-  const body = {
-    branch,
-    new_name: document.getElementById('newName').value,
-    new_school: document.getElementById('newSchool').value,
-    new_grade: document.getElementById('newGrade').value,
-    new_gender: document.getElementById('newGender').value
-  };
-  const res = await fetch('https://supermax.kr/feed/add-new', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
-  });
-  const json = await res.json();
-  if (json.success) {
-    alert('등록 완료!');
-    loadStudents(branch);
-  } else alert('등록 실패');
+  } catch (error) {
+    console.error('Error loading students:', error);
+    alert('학생 목록을 불러오는 중 오류가 발생했습니다.');
+  }
 }
 
 async function toggleAttendance(exam_number, attended) {
-  await fetch('https://supermax.kr/feed/attendance-check', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ exam_number, attended })
-  });
-  const branch = sessionStorage.getItem('branch');
-  loadStudents(branch);
+  try {
+    await fetch('https://supermax.kr/feed/attendance-check', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ exam_number, attended })
+    });
+    loadStudents();
+  } catch (error) {
+    console.error('Error updating attendance:', error);
+    alert('출결 상태 업데이트 중 오류가 발생했습니다.');
+  }
 }
 
-function openSwap(origin_exam_number) {
-  const name = prompt('대체자 이름은?');
-  const school = prompt('학교명은?');
-  const grade = prompt('학년은?');
-  const gender = prompt('성별 (남/여)?');
-  const branch = sessionStorage.getItem('branch');
+function openSwapModal(exam_number) {
+  swapExamNumber = exam_number;
+  document.getElementById('swapName').value = '';
+  document.getElementById('swapSchool').value = '';
+  document.getElementById('swapGrade').value = '';
+  document.getElementById('swapGender').value = '';
 
+  document.getElementById('swapModal').classList.add('active');
+  document.getElementById('swapModal').classList.add('active');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('active');
+}
+
+async function submitSwap() {
+  const name = document.getElementById('swapName').value.trim();
+  const school = document.getElementById('swapSchool').value.trim();
+  const grade = document.getElementById('swapGrade').value.trim();
+  const gender = document.getElementById('swapGender').value;
+  
   if (!name || !school || !grade || !gender) {
-    alert('❌ 모든 항목을 입력해야 합니다.');
+    alert('모든 항목을 입력해주세요.');
     return;
   }
-
-  // ✅ 입력 확인
-  const confirmText = `
-[대체자 등록 확인]
-
-원래 수험번호: ${origin_exam_number}
-대체자 이름: ${name}
-학교: ${school}
-학년: ${grade}
-성별: ${gender}
-지점: ${branch}
-
-등록하시겠습니까?
-  `.trim();
-
-  const isOk = confirm(confirmText);
-  if (!isOk) return;
-
-  fetch('https://supermax.kr/feed/add-swap', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ origin_exam_number, new_name: name, new_school: school, new_grade: grade, new_gender: gender, branch })
-  }).then(r => r.json()).then(json => {
+  
+  try {
+    const response = await fetch('https://supermax.kr/feed/add-swap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        origin_exam_number: swapExamNumber, 
+        new_name: name, 
+        new_school: school, 
+        new_grade: grade, 
+        new_gender: gender, 
+        branch: currentBranch 
+      })
+    });
+    
+    const json = await response.json();
+    
     if (json.success) {
-      alert(`✅ 대체자 등록 완료\n수험번호: ${json.exam_number}`);
-      loadStudents(branch);
+      alert(`대체자 등록 완료\n수험번호: ${json.exam_number}`);
+      closeModal('swapModal');
+      loadStudents();
     } else {
-      alert('❌ 등록 실패');
+      alert('대체자 등록에 실패했습니다.');
     }
-  });
+  } catch (error) {
+    console.error('Error submitting swap:', error);
+    alert('대체자 등록 중 오류가 발생했습니다.');
+  }
 }
 
 function submitNew() {
-  const branch = sessionStorage.getItem('branch');
+  document.getElementById('newModal').classList.add('active');
+  document.getElementById('newName').value = '';
+  document.getElementById('newSchool').value = '';
+  document.getElementById('newGrade').value = '';
+  document.getElementById('newGender').value = '';
 
-  const name = prompt('이름은?');
-  const school = prompt('학교는?');
-  const grade = prompt('학년은?');
-  const gender = prompt('성별 (남/여)?');
-
-  if (!name || !school || !grade || !gender) {
-    alert('❌ 모든 항목을 입력해야 합니다.');
-    return;
-  }
-
-  // ✅ 입력 확인 창
-  const confirmText = `
-[신규 등록 확인]
-
-이름: ${name}
-학교: ${school}
-학년: ${grade}
-성별: ${gender}
-지점: ${branch}
-
-등록하시겠습니까?
-  `.trim();
-
-  const isOk = confirm(confirmText);
-  if (!isOk) return; // ❌ 취소 시 종료
-
-  // ✅ 등록 요청
-  const body = {
-    branch,
-    new_name: name,
-    new_school: school,
-    new_grade: grade,
-    new_gender: gender
-  };
-
-  fetch('https://supermax.kr/feed/add-new', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
-  })
-    .then(res => res.json())
-    .then(json => {
-      if (json.success) {
-        alert(`✅ 등록 완료!\n수험번호: ${json.assigned_exam_number}`);
-        loadStudents(branch);
-      } else {
-        alert('❌ 등록 실패');
-      }
-    });
+  document.getElementById('newModal').classList.add('active');
 }
 
-
+async function submitNewStudent() {
+  const name = document.getElementById('newName').value.trim();
+  const school = document.getElementById('newSchool').value.trim();
+  const grade = document.getElementById('newGrade').value.trim();
+  const gender = document.getElementById('newGender').value;
+  
+  if (!name || !school || !grade || !gender) {
+    alert('모든 항목을 입력해주세요.');
+    return;
+  }
+  
+  try {
+    const response = await fetch('https://supermax.kr/feed/add-new', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        branch: currentBranch,
+        new_name: name,
+        new_school: school,
+        new_grade: grade,
+        new_gender: gender
+      })
+    });
+    
+    const json = await response.json();
+    
+    if (json.success) {
+      alert(`신규 등록 완료!\n수험번호: ${json.assigned_exam_number}`);
+      closeModal('newModal');
+      loadStudents();
+    } else {
+      alert('신규 등록에 실패했습니다.');
+    }
+  } catch (error) {
+    console.error('Error submitting new student:', error);
+    alert('신규 등록 중 오류가 발생했습니다.');
+  }
+}
 </script>
 </body>
 </html>
