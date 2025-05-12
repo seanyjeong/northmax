@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>전체 기록 데이터</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      font-size: 14px;
+      background: #f7f7f7;
+      padding: 20px;
+      color: #333;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      overflow-x: auto;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+    }
+    th, td {
+      text-align: center;
+      padding: 12px 8px;
+      border-bottom: 1px solid #eee;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    th {
+      background: #4a6baf;
+      color: #fff;
+      position: sticky;
+      top: 0;
+      font-weight: 500;
+      min-width: 60px;
+    }
+    tr:hover {
+      background-color: #f5f8ff;
+    }
+    .filter-box {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      gap: 10px;
+    }
+    input {
+      padding: 10px;
+      width: 300px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4a6baf;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Pretendard', sans-serif;
+      transition: background-color 0.2s;
+      font-size: 14px;
+    }
+    button:hover {
+      background-color: #3a5a9f;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #4a6baf;
+      font-size: 14px;
+    }
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .completed-row {
+      background-color: #e8f5e9 !important;
+    }
+    .progress-container {
+      height: 12px;
+      background: #e0e0e0;
+      border-radius: 6px;
+      margin-top: auto;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #4a6baf;
+      border-radius: 6px;
+    }
+    .gender-male {
+      color: #3f51b5;
+    }
+    .gender-female {
+      color: #e91e63;
+    }
+    .grade-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .grade-card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+    }
+    .grade-card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #4a6baf;
+      font-size: 14px;
+    }
+    .grade-card .value {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+    .grade-card .subtext {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .summary {
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #444;
+    }
+    .nowrap {
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>전체 기록 데이터 조회</h1>
+
+  <div class="dashboard" id="dashboard">
+    <!-- 대시보드 내용이 여기에 동적으로 로드됩니다 -->
+  </div>
+
+  <div class="grade-cards" id="gradeCards">
+    <!-- 학년별 카드 내용이 여기에 동적으로 로드됩니다 -->
+  </div>
+
+  <div class="filter-box">
+    <input type="text" id="filterInput" placeholder="이름, 지점, 수험번호 검색" />
+    <button onclick="renderAllData()">검색</button>
+  </div>
+
+  <div id="dataContainer">로딩 중...</div>
+
+  <script>
+    let allData = [];
+
+    function countCompletedTests(student) {
+      let count = 0;
+      if (student.jump_score) count++;
+      if (student.medicineball_score) count++;
+      if (student.shuttle_score) count++;
+      if (student.sit_reach_score) count++;
+      if (student.back_strength_score) count++;
+      return count;
+    }
+
+    function isFullyCompleted(student) {
+      return countCompletedTests(student) === 5;
+    }
+
+    async function fetchData() {
+      const res = await fetch('https://supermax.kr/feed/all-records');
+      allData = await res.json();
+      renderDashboard();
+      renderGradeCards();
+      renderAllData();
+    }
+
+    function renderDashboard() {
+      const total = allData.length;
+      const fullyCompleted = allData.filter(isFullyCompleted).length;
+      const totalTestsPossible = total * 5;
+      const totalTestsCompleted = allData.reduce((sum, student) => sum + countCompletedTests(student), 0);
+      const completionRate = totalTestsPossible > 0 ? Math.round((totalTestsCompleted / totalTestsPossible) * 100) : 0;
+      
+      const males = allData.filter(d => d.gender === '남').length;
+      const females = allData.filter(d => d.gender === '여').length;
+      
+      const dashboardHTML = `
+        <div class="stat-card">
+          <h3>총 인원</h3>
+          <div class="value">${total}명</div>
+          <div class="progress-container">
+            <div class="progress-bar" style="width: 100%"></div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>완료 인원</h3>
+          <div class="value">${fullyCompleted}명</div>
+          <div class="progress-container">
+            <div class="progress-bar" style="width: ${Math.round((fullyCompleted/total)*100)}%"></div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>진행 상황</h3>
+          <div class="value">${completionRate}%</div>
+          <div class="progress-container">
+            <div class="progress-bar" style="width: ${completionRate}%"></div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>성별 비율</h3>
+          <div class="value">${Math.round((males/total)*100)}:${Math.round((females/total)*100)}</div>
+          <div class="subtext">남 ${males}명 / 여 ${females}명</div>
+          <div class="progress-container">
+            <div class="progress-bar" style="width: ${Math.round((males/total)*100)}%"></div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('dashboard').innerHTML = dashboardHTML;
+    }
+
+    function renderGradeCards() {
+      const grade1 = allData.filter(d => d.grade === '1');
+      const grade2 = allData.filter(d => d.grade === '2');
+      const grade3 = allData.filter(d => d.grade === '3');
+      const retakers = allData.filter(d => d.grade === 'N');
+      
+      function renderGradeCard(gradeData, title) {
+        const total = gradeData.length;
+        const males = gradeData.filter(d => d.gender === '남').length;
+        const females = gradeData.filter(d => d.gender === '여').length;
+        const totalTestsCompleted = gradeData.reduce((sum, student) => sum + countCompletedTests(student), 0);
+        const completionRate = total > 0 ? Math.round((totalTestsCompleted / (total * 5)) * 100) : 0;
+        
+        return `
+          <div class="grade-card">
+            <h3>${title}</h3>
+            <div class="value">${total}명</div>
+            <div class="subtext">
+              <span class="gender-male">남 ${males}명</span> / 
+              <span class="gender-female">여 ${females}명</span>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar" style="width: ${completionRate}%"></div>
+            </div>
+          </div>
+        `;
+      }
+      
+      const gradeCardsHTML = `
+        ${renderGradeCard(grade1, '1학년')}
+        ${renderGradeCard(grade2, '2학년')}
+        ${renderGradeCard(grade3, '3학년')}
+        ${renderGradeCard(retakers, 'N수생')}
+      `;
+      
+      document.getElementById('gradeCards').innerHTML = gradeCardsHTML;
+    }
+
+    function renderAllData() {
+      const filterText = document.getElementById('filterInput').value.trim().toLowerCase();
+
+      const filtered = allData.filter(d => {
+        return (
+          d.name?.toLowerCase().includes(filterText) ||
+          d.branch?.toLowerCase().includes(filterText) ||
+          d.exam_number?.toLowerCase().includes(filterText)
+        );
+      });
+
+      const rows = filtered.map(d => `
+        <tr class="${isFullyCompleted(d) ? 'completed-row' : ''}">
+          <td class="nowrap">${d.exam_number}</td>
+          <td class="nowrap">${d.name}</td>
+          <td class="nowrap">${d.branch}</td>
+          <td>${d.grade}</td>
+          <td>${d.gender}</td>
+          <td>${d.jump_record ?? '-'}</td>
+          <td>${d.jump_score ?? '-'}</td>
+          <td>${d.medicineball_record ?? '-'}</td>
+          <td>${d.medicineball_score ?? '-'}</td>
+          <td>${d.shuttle_record ?? '-'}</td>
+          <td>${d.shuttle_score ?? '-'}</td>
+          <td>${d.sit_reach_record ?? '-'}</td>
+          <td>${d.sit_reach_score ?? '-'}</td>
+          <td>${d.back_strength_record ?? '-'}</td>
+          <td>${d.back_strength_score ?? '-'}</td>
+          <td><strong>${d.total_score ?? '-'}</strong></td>
+        </tr>
+      `).join('');
+
+      const fullyCompletedCount = filtered.filter(isFullyCompleted).length;
+      const completionRate = filtered.length > 0 ? Math.round((fullyCompletedCount / filtered.length) * 100) : 0;
+
+      const tableHTML = `
+        <div class="summary">
+          총 <strong>${filtered.length}</strong>명 (완료 <strong>${fullyCompletedCount}</strong>명, ${completionRate}%)
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 100px;">수험번호</th>
+              <th style="width: 80px;">이름</th>
+              <th style="width: 120px;">지점</th>
+              <th style="width: 50px;">학년</th>
+              <th style="width: 50px;">성별</th>
+              <th style="width: 80px;">제멀(기록)</th>
+              <th style="width: 70px;">제멀(점수)</th>
+              <th style="width: 80px;">메디신(기록)</th>
+              <th style="width: 70px;">메디신(점수)</th>
+              <th style="width: 80px;">10m왕복(기록)</th>
+              <th style="width: 70px;">10m왕복(점수)</th>
+              <th style="width: 80px;">좌전굴(기록)</th>
+              <th style="width: 70px;">좌전굴(점수)</th>
+              <th style="width: 80px;">배근력(기록)</th>
+              <th style="width: 70px;">배근력(점수)</th>
+              <th style="width: 70px;">총점</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      document.getElementById('dataContainer').innerHTML = tableHTML;
+    }
+
+    fetchData();
+    document.getElementById('filterInput').addEventListener('input', (e) => {
+      if (e.target.value === '') renderAllData();
+    });
+    document.getElementById('filterInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') renderAllData();
+    });
+  </script>
+
+</body>
+</html>
