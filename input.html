@@ -77,6 +77,15 @@
       margin: 0.3rem;
       min-width: 60px;
     }
+
+.exam-btn.absent {
+  background-color: #ffe5e5 !important;
+  color: #c62828 !important;
+  font-weight: bold !important;
+  border: 1px solid #c62828 !important;
+}
+
+
     
     .exam-btn.saved {
       background: #d1fae5;
@@ -388,7 +397,7 @@
   <div class="card">
     <div id="examList" class="row"></div>
     <div class="pagination" id="pagination"></div>
-    <p class="shortcut-hint">단축키: 숫자 입력 후 Enter로 빠른 검색 가능</p>
+    <p class="shortcut-hint">빨간색 박스는 결시자</p>
   </div>
   
   <div id="studentInfo" class="student-info" style="display: none;">
@@ -625,31 +634,35 @@ function renderExamList() {
   const paginated = studentList.slice(start, start + pageSize);
   const recordField = getField(currentEvent, 'record');
 
-  paginated.forEach(student => {
-    const btn = document.createElement('button');
-    btn.className = 'exam-btn';
-    btn.textContent = student.exam_number;
-    btn.title = `${student.name} (${student.school})`;
+paginated.forEach(student => {
+  const btn = document.createElement('button');
+  btn.classList.add('exam-btn'); // 기본 클래스 먼저
 
-    // 저장된 기록이 있는 경우 스타일 적용
-    const val = student[recordField];
-    if (val !== null && val !== undefined && val !== '' && val !== 'null') {
-      btn.classList.add('saved');
-    }
+  const val = student[getField(currentEvent, 'record')];
+  if (val !== null && val !== undefined && val !== '' && val !== 'null') {
+    btn.classList.add('saved'); // 저장된 경우
+  }
 
-    // 현재 선택된 학생 강조
-    if (student.exam_number == selectedExam) {
-      btn.style.border = '2px solid var(--primary)';
-    }
+  if (student.attended === 0) {
+    btn.classList.add('absent'); // 결시자 표시
+    console.log('❗ 결시자 표시됨:', student.exam_number); // 확인용
+  }
 
-    btn.onclick = () => {
-      selectedExam = student.exam_number;
-      loadStudent(student.exam_number);
-      renderExamList(); // 선택 상태 반영을 위해 다시 렌더링
-    };
-    
-    examList.appendChild(btn);
-  });
+  if (student.exam_number == selectedExam) {
+    btn.style.border = '2px solid var(--primary)';
+  }
+
+  btn.textContent = student.exam_number;
+  btn.title = `${student.name} (${student.school})`;
+  btn.onclick = () => {
+    selectedExam = student.exam_number;
+    loadStudent(student.exam_number);
+    renderExamList(); // 다시 렌더링
+  };
+
+  examList.appendChild(btn);
+});
+
 
   // 페이지네이션 생성
   const totalPages = Math.ceil(studentList.length / pageSize);
