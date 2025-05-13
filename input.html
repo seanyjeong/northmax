@@ -3,408 +3,778 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2025맥스북부실기테스트</title>
+  <title>맥스실기테스트 기록 시스템</title>
   <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #e2376a;
+      --primary-hover: #c92a5c;
+      --secondary: #2563eb;
+      --success: #10b981;
+      --light-gray: #f5f5f5;
+      --border-radius: 8px;
+    }
+    
     body {
-      font-family: 'Pretendard', sans-serif;
-      font-size: 0.9em;
+      max-width: 800px;
+      margin: auto;
       padding: 1em;
-      background-color: #f7f7f7;
-      overflow-x: hidden;
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #fafafa;
     }
-    header {
+    
+    h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
       text-align: center;
-      margin-bottom: 1em;
-      position: relative;
+      font-weight: 700;
     }
-    header img {
-      max-width: 100%;
-      width: 600px;
-      height: auto;
+    
+    .card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
     }
-    .share-button {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      cursor: pointer;
-    }
-    .share-button svg {
-      width: 28px;
-      height: 28px;
-      color: #444;
-      transition: transform 0.2s;
-    }
-    .share-button:hover svg {
-      transform: scale(1.2);
-      color: #111;
-    }
-    .tabs {
+    
+    .form-controls {
       display: flex;
       justify-content: center;
-      gap: 0.5em;
-      margin-top: 1em;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    
+    .form-controls label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      font-weight: 500;
+      min-width: 180px;
+    }
+    
+    .form-controls select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+    
+    .exam-btn {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      background: var(--light-gray);
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 0.3rem;
+      min-width: 60px;
+    }
+    
+    .exam-btn.saved {
+      background: #d1fae5;
+      color: #065f46;
+      font-weight: 500;
+    }
+    
+    .exam-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .exam-btn.saved:hover {
+      background: #a7f3d0;
+    }
+    
+    .student-info {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    
+    .info-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .info-table tr:not(:last-child) {
+      border-bottom: 1px solid #eee;
+    }
+    
+    .info-table th {
+      text-align: left;
+      padding: 0.75rem 0.5rem;
+      width: 30%;
+      font-weight: 500;
+    }
+    
+    .info-table td {
+      padding: 0.75rem 0.5rem;
+      font-weight: 400;
+    }
+    
+    .record-form {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    
+    .foul-check {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .foul-check input {
+      margin-right: 0.5rem;
+      width: 18px;
+      height: 18px;
+    }
+    
+    .foul-check label {
+      font-weight: 500;
+    }
+    
+    .record-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    #recordInput {
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      width: 150px;
+      text-align: center;
+      font-weight: 500;
+      -moz-appearance: textfield;
+    }
+    
+    /* 숫자 입력 화살표 제거 */
+    #recordInput::-webkit-outer-spin-button,
+    #recordInput::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    .submit-btn {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .submit-btn:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .result-message {
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      margin: 1rem 0;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .success {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    
+    .error {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin: 1.5rem 0;
       flex-wrap: wrap;
     }
-    .tabs button {
-      background: #222;
-      color: #fff;
+    
+    .pagination button {
+      margin: 0 0.3rem;
+      padding: 0.5rem 0.8rem;
+      font-size: 1rem;
+      background: var(--light-gray);
       border: none;
-      padding: 10px 18px;
-      border-radius: 20px;
-      font-weight: bold;
+      border-radius: var(--border-radius);
       cursor: pointer;
     }
-    .tabs button.active {
-      background: #555;
+    
+    .pagination button.active {
+      background: var(--primary);
+      color: white;
     }
-    .filter-controls {
+    
+    /* 모달 스타일 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 0.5em;
-      margin-top: 1em;
+      z-index: 1000;
     }
-    table {
-      width: 100%;
-      font-size: 0.85em;
-      margin-top: 0.5em;
+    
+    .modal-content {
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-      overflow: hidden;
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      max-width: 400px;
+      width: 90%;
+      animation: fadeIn 0.3s ease-out;
     }
-    th {
-      background: #111;
-      color: #fff;
-    }
-    th, td {
+    
+    .modal-content h3 {
+      color: var(--primary);
+      margin-bottom: 1rem;
       text-align: center;
-      padding: 0.6em;
     }
-    .gold { background: gold; font-weight: bold; }
-    .silver { background: silver; font-weight: bold; }
-    .bronze { background: #cd7f32; font-weight: bold; }
-    .highlight { background: #f0f0f0; }
-/* 기존 스타일 생략 후 핵심 글리치 파트 */
-.glitch-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  display: block;
-}
-.glitch-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: auto;
-  opacity: 1;
-}
-.glitch-img.base {
-  position: relative;
-  z-index: 1;
-}
-.glitch-img.red {
-  mix-blend-mode: screen;
-  filter: drop-shadow(-2px 0 red);
-  z-index: 2;
-  opacity: 0.7;
-}
-.glitch-img.blue {
-  mix-blend-mode: screen;
-  filter: drop-shadow(2px 0 blue);
-  z-index: 3;
-  opacity: 0.7;
-}
-.glitch-active .glitch-img.red {
-  animation: red-glitch 0.3s ease-in-out;
-}
-.glitch-active .glitch-img.blue {
-  animation: blue-glitch 0.3s ease-in-out;
-}
-@keyframes red-glitch {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(-4px, 2px); }
-  100% { transform: translate(0, 0); }
-}
-@keyframes blue-glitch {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(4px, -2px); }
-  100% { transform: translate(0, 0); }
-}
-
-tr.selected {
-  background-color: #8ee1f0 !important;
-  font-weight: bold;
-}
-
-
-
+    
+    .modal-content p {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    
+    .modal-content form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .modal-content input[type="password"] {
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      margin-bottom: 0.5rem;
+    }
+    
+    .modal-content button {
+      padding: 0.75rem;
+      font-size: 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .modal-content button:hover {
+      background: var(--primary-hover);
+    }
+    
+    #password-error {
+      color: #b91c1c;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    /* 반응형 디자인 */
+    @media (max-width: 600px) {
+      .form-controls {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .form-controls label {
+        width: 100%;
+      }
+      
+      .record-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      #recordInput {
+        width: 100%;
+      }
+      
+      .submit-btn {
+        width: 100%;
+      }
+    }
+    
+    /* 키보드 단축키 안내 */
+    .shortcut-hint {
+      font-size: 0.85rem;
+      color: #666;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    
+    /* 종목별 색상 구분 */
+    .event-jump { color: #e2376a; }
+    .event-shuttle { color: #2563eb; }
+    .event-sit_reach { color: #10b981; }
+    .event-back_strength { color: #7c3aed; }
+    .event-medicineball { color: #f59e0b; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="glitch-wrapper" onclick="copyShareLink()">
-        <img src="https://github.com/seanyjeong/northmax/blob/main/north.png?raw=true" alt="title" class="glitch-img base">
-        <img src="https://github.com/seanyjeong/northmax/blob/main/north.png?raw=true" class="glitch-img red">
-        <img src="https://github.com/seanyjeong/northmax/blob/main/north.png?raw=true" class="glitch-img blue">
-      </div>
-      <div class="share-button" onclick="copyShareLink()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2-icon lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
-        <div style="font-size: 0.75em; text-align: center; color: #555; margin-top: 2px;">공유</div>  
+<!-- 비밀번호 모달 -->
+<div id="password-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>기록 시스템 접근</h3>
+    <p>종목별 비밀번호를 입력해주세요</p>
+    <form id="password-form">
+      <input type="password" id="password-input" placeholder="비밀번호" required autofocus>
+      <button type="submit">접속하기</button>
+    </form>
+    <p id="password-error" class="error" style="display: none;">비밀번호가 올바르지 않습니다. 다시 시도해주세요.</p>
+    <div style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+      <p><strong>비밀번호 안내:</strong></p>
+      <ul style="text-align: left; padding-left: 1.2rem; margin-top: 0.5rem;">
+        <li>제자리멀리뛰기: maxj2025</li>
+        <li>10m 왕복달리기: maxr2025</li>
+        <li>좌전굴: maxs2025</li>
+        <li>배근력: maxb2025</li>
+        <li>메디신볼: maxm2025</li>
+        <li>전체 접근: 2025max</li>
+      </ul>
     </div>
+  </div>
+</div>
 
-  </header>
-
-  <div class="tabs">
-    <button onclick="selectTab('total_all')">총점 전체</button>
-    <button onclick="selectTab('total_gender')">총점 남/여</button>
-    <button onclick="selectTab('total_yebi')">예비반</button>
-    <button onclick="selectTab('jump')">제멀</button>
-    <button onclick="selectTab('medicineball')">메디신볼</button>
-    <button onclick="selectTab('shuttle')">10m왕복</button>
-    <button onclick="selectTab('sit_reach')">좌전굴</button>
-    <button onclick="selectTab('back_strength')">배근력</button>
+<!-- 메인 콘텐츠 -->
+<div id="main-content" style="display: none;">
+  <div class="card">
+    <h2 id="event-title">맥스실기테스트 기록 시스템</h2>
+    
+    <div class="form-controls">
+      <label>
+        조 선택
+        <select id="groupSelect"></select>
+      </label>
+      <label>
+        측정 종목
+        <select id="eventSelect">
+          <!-- 동적으로 생성 -->
+        </select>
+      </label>
+    </div>
   </div>
 
-  <div class="filter-controls">
-    <input type="text" id="filterInput" placeholder="이름 검색" />
-
-    <button onclick="loadRankings()">검색</button>
+  <div class="card">
+    <div id="examList" class="row"></div>
+    <div class="pagination" id="pagination"></div>
+    <p class="shortcut-hint">단축키: 숫자 입력 후 Enter로 빠른 검색 가능</p>
   </div>
+  
+  <div id="studentInfo" class="student-info" style="display: none;">
+    <div class="info-title">학생 정보</div>
+    <table class="info-table" id="studentTable"></table>
+  </div>
+  
+  <div id="recordForm" class="record-form" style="display: none;">
+    <div class="foul-check">
+      <input type="checkbox" id="foulCheck">
+      <label for="foulCheck">파울 (F) 처리</label>
+    </div>
+    <div class="record-row">
+      <input type="number" step="any" name="record" id="recordInput" placeholder="기록 입력" required autocomplete="off" />
+      <button type="submit" class="submit-btn" id="submitRecord">기록 저장</button>
+    </div>
+    <div id="result" class="result-message" style="display: none;"></div>
+  </div>
+</div>
 
-  <div id="rankings"></div>
+<script>
+// 비밀번호와 종목 매핑
+const PASSWORD_MAP = {
+  '2025max': 'all', // 전체 접근
+  'maxj2025': '제멀', // 제자리멀리뛰기
+  'maxr2025': '10m', // 10m 왕복달리기
+  'maxs2025': '좌전굴', // 좌전굴
+  'maxb2025': '배근력', // 배근력
+  'maxm2025': '메디신볼' // 메디신볼던지기
+};
 
-  <script>
-    let allData = [];
-    let currentTab = 'total_all';
+// 종목 목록
+const EVENTS = [
+  { value: '제멀', name: '제자리멀리뛰기', class: 'event-jump' },
+  { value: '10m', name: '10m 왕복달리기', class: 'event-shuttle' },
+  { value: '좌전굴', name: '좌전굴', class: 'event-sit_reach' },
+  { value: '배근력', name: '배근력', class: 'event-back_strength' },
+  { value: '메디신볼', name: '메디신볼던지기', class: 'event-medicineball' }
+];
 
-    async function fetchData() {
-      const res = await fetch('https://supermax.kr/feed/all-records');
-      allData = await res.json();
+// 현재 허용된 종목 (비밀번호에 따라 결정)
+let allowedEvents = [...EVENTS];
+let currentEventType = 'all';
 
-      const params = new URLSearchParams(window.location.search);
-      const initialTab = params.get('tab');
-      selectTab(initialTab || 'total_all');
-    }
-
-    function selectTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-      const match = Array.from(document.querySelectorAll('.tabs button')).find(b => b.onclick.toString().includes(tab));
-      if (match) match.classList.add('active');
-      glitchEffect();
-      loadRankings();
-    }
-
-    function copyShareLink() {
-  const url = new URL(window.location.href);
-  url.searchParams.set('tab', currentTab);
-  const link = url.toString();
-  console.log("📎 공유 링크 생성됨:", link);
-
-  if (navigator.clipboard && window.isSecureContext) {
-    console.log("✅ 클립보드 API 사용 가능");
-    navigator.clipboard.writeText(link)
-      .then(() => {
-        console.log("✅ 클립보드 복사 성공");
-        alert("✅ 공유 링크가 복사되었습니다!");
-      })
-      .catch((err) => {
-        console.warn("❌ 클립보드 복사 실패, fallback 시도:", err);
-        fallbackCopy(link);
+// 비밀번호 처리
+document.getElementById('password-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const password = document.getElementById('password-input').value;
+  
+  if (PASSWORD_MAP[password]) {
+    currentEventType = PASSWORD_MAP[password];
+    
+    // 종목 선택 옵션 설정
+    const eventSelect = document.getElementById('eventSelect');
+    eventSelect.innerHTML = '';
+    
+    if (currentEventType === 'all') {
+      // 전체 접근 가능
+      allowedEvents = [...EVENTS];
+      allowedEvents.forEach(event => {
+        const opt = document.createElement('option');
+        opt.value = event.value;
+        opt.textContent = event.name;
+        opt.className = event.class;
+        eventSelect.appendChild(opt);
       });
+    } else {
+      // 특정 종목만 접근 가능
+      allowedEvents = EVENTS.filter(event => event.value === currentEventType);
+      const opt = document.createElement('option');
+      const selectedEvent = EVENTS.find(event => event.value === currentEventType);
+      opt.value = selectedEvent.value;
+      opt.textContent = selectedEvent.name;
+      opt.className = selectedEvent.class;
+      eventSelect.appendChild(opt);
+      eventSelect.disabled = true; // 선택 불가능하게 설정
+    }
+    
+    document.getElementById('password-modal').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    document.getElementById('event-title').textContent = `${allowedEvents[0].name} 기록 시스템`;
+    loadGroupList(); // 비밀번호 확인 후 데이터 로딩 시작
+    document.getElementById('recordInput').focus();
   } else {
-    console.warn("❗ navigator.clipboard 지원 안됨 → fallback 실행");
-    fallbackCopy(link);
+    const errorEl = document.getElementById('password-error');
+    errorEl.style.display = 'block';
+    errorEl.textContent = '비밀번호가 올바르지 않습니다. 다시 시도해주세요.';
+    document.getElementById('password-input').value = '';
+    document.getElementById('password-input').focus();
   }
+});
+
+// 필드 매핑 함수
+function getField(event, type) {
+  const map = {
+    '제멀': 'jump',
+    '10m': 'shuttle',
+    '좌전굴': 'sit_reach',
+    '배근력': 'back_strength',
+    '메디신볼': 'medicineball'
+  };
+  return `${map[event]}_${type}`;
 }
 
-function fallbackCopy(text) {
-  console.log("⚙️ fallback 복사 시도 중");
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.style.position = "fixed";
-  textarea.style.top = "-999px";
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
+// DOM 요소
+const groupSelect = document.getElementById('groupSelect');
+const eventSelect = document.getElementById('eventSelect');
+const examList = document.getElementById('examList');
+const pagination = document.getElementById('pagination');
+const studentInfo = document.getElementById('studentInfo');
+const studentTable = document.getElementById('studentTable');
+const form = document.getElementById('recordForm');
+const result = document.getElementById('result');
+const foulCheck = document.getElementById('foulCheck');
+const recordInput = document.getElementById('recordInput');
+const submitBtn = document.getElementById('submitRecord');
+
+// 전역 변수
+let selectedExam = '';
+let currentBranch = '';
+let currentGender = '';
+let currentGroup = '';
+let currentEvent = allowedEvents[0]?.value || '제멀';
+let studentList = [];
+const pageSize = 30;
+let currentPage = 1;
+let searchInput = '';
+let searchTimeout = null;
+
+// 파울 체크박스 이벤트
+foulCheck.addEventListener('change', () => {
+  recordInput.disabled = foulCheck.checked;
+  if (foulCheck.checked) {
+    recordInput.value = '';
+    submitRecord(); // 파울 체크 시 자동 저장
+  } else {
+    recordInput.focus();
+  }
+});
+
+// 조 선택 변경 이벤트
+groupSelect.addEventListener('change', async () => {
+  currentGroup = groupSelect.value;
+  if (!currentGroup) return;
+  await loadExams();
+});
+
+// 종목 선택 변경 이벤트
+eventSelect.addEventListener('change', async () => {
+  currentEvent = eventSelect.value;
+  if (currentGroup) {
+    await loadExams();
+  }
+  if (selectedExam) {
+    loadStudent(selectedExam); // 현재 선택된 학생 정보 새로고침
+  }
+});
+
+// 키보드 이벤트 핸들러 (검색 기능)
+document.addEventListener('keydown', (e) => {
+  // 숫자 입력으로 검색 (0-9)
+  if (e.key >= '0' && e.key <= '9') {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    
+    searchInput += e.key;
+    searchTimeout = setTimeout(() => {
+      searchInput = '';
+    }, 1000);
+    
+    const foundStudent = studentList.find(s => s.exam_number.startsWith(searchInput));
+    if (foundStudent) {
+      loadStudent(foundStudent.exam_number);
+      recordInput.focus();
+    }
+  }
+  
+  // Enter 키로 기록 저장
+  if (e.key === 'Enter' && recordInput.value && !foulCheck.checked) {
+    submitRecord();
+  }
+});
+
+// 조 목록 로드
+async function loadGroupList() {
   try {
-    const success = document.execCommand("copy");
-    console.log("📋 fallback 복사 결과:", success);
-    alert("✅ 공유 링크가 복사되었습니다! (fallback)");
-  } catch (err) {
-    console.error("❌ fallback 복사 실패:", err);
-    alert("❌ 공유 실패. 수동 복사 부탁드립니다.");
+    const res = await fetch('https://supermax.kr/feed/group-summary');
+    const groups = await res.json();
+    groupSelect.innerHTML = '<option value="">조를 선택하세요</option>';
+    groups.forEach(({ group_no }) => {
+      const opt = document.createElement('option');
+      opt.value = group_no;
+      opt.textContent = `${group_no}조`;
+      groupSelect.appendChild(opt);
+    });
+  } catch (error) {
+    console.error('조 목록 로드 실패:', error);
   }
-  document.body.removeChild(textarea);
 }
 
+// 학생 목록 로드
+async function loadExams() {
+  try {
+    const res = await fetch(`https://supermax.kr/feed/group/${currentGroup}`);
+    studentList = await res.json();
+    console.log('학생 리스트 로드 완료:', studentList);
+    currentPage = 1;
+    renderExamList();
+  } catch (error) {
+    console.error('학생 목록 로드 실패:', error);
+  }
+}
 
-function loadRankings() {
-  const selected = currentTab;
-  const filterText = document.getElementById('filterInput').value.trim().toLowerCase();
+// 학생 목록 렌더링
+function renderExamList() {
+  examList.innerHTML = '';
+  pagination.innerHTML = '';
+  const start = (currentPage - 1) * pageSize;
+  const paginated = studentList.slice(start, start + pageSize);
+  const recordField = getField(currentEvent, 'record');
 
-  const displayNames = {
-    total: '총점',
-    jump: '제자리멀리뛰기',
-    medicineball: '메디신볼던지기',
-    shuttle: '10m 왕복달리기',
-    sit_reach: '좌전굴',
-    back_strength: '배근력'
+  paginated.forEach(student => {
+    const btn = document.createElement('button');
+    btn.className = 'exam-btn';
+    btn.textContent = student.exam_number;
+    btn.title = `${student.name} (${student.school})`;
+
+    // 저장된 기록이 있는 경우 스타일 적용
+    const val = student[recordField];
+    if (val !== null && val !== undefined && val !== '' && val !== 'null') {
+      btn.classList.add('saved');
+    }
+
+    // 현재 선택된 학생 강조
+    if (student.exam_number == selectedExam) {
+      btn.style.border = '2px solid var(--primary)';
+    }
+
+    btn.onclick = () => {
+      selectedExam = student.exam_number;
+      loadStudent(student.exam_number);
+      renderExamList(); // 선택 상태 반영을 위해 다시 렌더링
+    };
+    
+    examList.appendChild(btn);
+  });
+
+  // 페이지네이션 생성
+  const totalPages = Math.ceil(studentList.length / pageSize);
+  if (totalPages > 1) {
+    for (let i = 1; i <= totalPages; i++) {
+      const pBtn = document.createElement('button');
+      pBtn.textContent = i;
+      if (i === currentPage) pBtn.classList.add('active');
+      pBtn.onclick = () => {
+        currentPage = i;
+        renderExamList();
+      };
+      pagination.appendChild(pBtn);
+    }
+  }
+}
+
+// 학생 정보 로드
+async function loadStudent(exam_number) {
+  try {
+    const res = await fetch(`https://supermax.kr/feed/get-student?exam_number=${exam_number}`);
+    const json = await res.json();
+
+    if (json.success) {
+      const { name, school, grade, branch, gender } = json.student;
+      selectedExam = String(exam_number);
+      currentBranch = branch;
+      currentGender = gender;
+
+      const student = studentList.find(s => s.exam_number == selectedExam);
+      const recordField = getField(currentEvent, 'record');
+      const prevRecord = student ? student[recordField] : null;
+
+      // 학생 정보 표시 (테이블 행을 개별적으로 생성)
+      studentTable.innerHTML = '';
+      
+      const addRow = (label, value) => {
+        const row = document.createElement('tr');
+        const th = document.createElement('th');
+        th.textContent = label;
+        const td = document.createElement('td');
+        td.textContent = value;
+        row.appendChild(th);
+        row.appendChild(td);
+        studentTable.appendChild(row);
+      };
+      
+      addRow('수험번호', exam_number);
+      addRow('이름', name);
+      addRow('학교', school);
+      addRow('학년', grade);
+      addRow('성별', gender);
+      addRow('지점', branch);
+
+      // 기록 입력 필드 설정
+      if (prevRecord === 'F') {
+        foulCheck.checked = true;
+        recordInput.value = '';
+        recordInput.disabled = true;
+      } else {
+        foulCheck.checked = false;
+        recordInput.disabled = false;
+        recordInput.value = (prevRecord !== null && prevRecord !== undefined && prevRecord !== '' && prevRecord !== 'null') ? prevRecord : '';
+      }
+
+      studentInfo.style.display = 'block';
+      form.style.display = 'block';
+      result.style.display = 'none';
+      recordInput.focus();
+    }
+  } catch (error) {
+    console.error('학생 정보 로드 실패:', error);
+  }
+}
+
+// 기록 저장 함수
+async function submitRecord() {
+  if (!selectedExam) return;
+  
+  const record = foulCheck.checked ? 'F' : parseFloat(recordInput.value);
+  if (!foulCheck.checked && (isNaN(record) || record === '')) {
+    result.textContent = '올바른 기록을 입력해주세요';
+    result.className = 'error';
+    result.style.display = 'block';
+    return;
+  }
+
+  const data = {
+    exam_number: selectedExam,
+    branch: currentBranch,
+    gender: currentGender,
+    event: currentEvent,
+    record
   };
 
-  let event = selected;
-  let mode = 'gender';
-  if (selected.startsWith('total_')) {
-    event = 'total';
-    mode = selected.split('_')[1];
+  try {
+    const res = await fetch('https://supermax.kr/feed/submit-record', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const json = await res.json();
+    if (json.success) {
+      result.innerHTML = `<strong>저장 완료</strong><br>${currentEvent}: ${record} → ${json.score}점`;
+      result.className = 'success';
+      
+      // 학생 목록 업데이트
+      const recordField = getField(currentEvent, 'record');
+      const student = studentList.find(s => s.exam_number == selectedExam);
+      if (student) student[recordField] = record;
+      
+      renderExamList();
+    } else {
+      result.textContent = '저장에 실패했습니다. 다시 시도해주세요.';
+      result.className = 'error';
+    }
+    result.style.display = 'block';
+  } catch (error) {
+    console.error('기록 저장 실패:', error);
+    result.textContent = '네트워크 오류가 발생했습니다.';
+    result.className = 'error';
+    result.style.display = 'block';
   }
+}
 
-  const key = event === 'total' ? 'total_score' : `${event}_record`;
-
-  const baseGroup = allData.filter(d => {
-    const validScore = d[key] !== null && d[key] !== undefined;
-    if (!validScore) return false;
-    if (event !== 'total' && !d.hasOwnProperty(`${event}_record`)) return false;
-    if (mode === 'gender') return d.gender === '남' || d.gender === '여';
-    if (mode === 'yebi') return parseInt(d.grade) <= 2;
-    return true;
-  });
-
-  const rankedGroup = rankify(baseGroup, event);
-
-  let displayList = rankedGroup;
-  if (filterText) {
-    displayList = rankedGroup.filter(d => {
-  return d.name?.toLowerCase().includes(filterText);
+// 폼 제출 이벤트
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  submitRecord();
 });
 
-  } else {
-    displayList = rankedGroup.slice(0, 30);
-  }
-
-  let html = '';
-
-  // ✅ 종목일 경우에도 남/여 분리 출력 추가
-  if (mode === 'gender') {
-    const maleList = displayList.filter(d => d.gender === '남');
-    const femaleList = displayList.filter(d => d.gender === '여');
-    html += `<div class="section"><h2>${displayNames[event]} 남자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(maleList, key)}</div>`;
-    html += `<div class="section"><h2>${displayNames[event]} 여자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(femaleList, key)}</div>`;
-  } else {
-    html += `<div class="section"><h2>${displayNames[event]} ${mode === 'yebi' ? '예비반' : '전체'} ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(displayList, key)}</div>`;
-  }
-
-  document.getElementById('rankings').innerHTML = html;
-}
-
-
-
-
-function rankify(fullList, event) {
-  const key = event === 'total' ? 'total_score' : `${event}_record`;
-  const isReverse = ['shuttle'].includes(event);
-
-  let grouped = fullList;
-
-  // ✅ 성별 분리 필요할 때만 나눠서 각각 rank 부여
-  const mode = currentTab.startsWith('total_') ? currentTab.split('_')[1] : 'gender';
-  if ((mode === 'gender' && event === 'total') || event !== 'total') {
-    const males = fullList.filter(d => d.gender === '남');
-    const females = fullList.filter(d => d.gender === '여');
-
-    const sortedM = males.map(s => ({
-  ...s,
-  _value: isNaN(parseFloat(s[key])) ? null : parseFloat(s[key]),
-  _tiebreaker: [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
-})).filter(s => s._value !== null)
-  .sort((a, b) => {
-    if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
-    return isReverse ? a._value - b._value : b._value - a._value;
-  });
-
-
-    const sortedF = females.map(s => ({
-      ...s,
-      _value: isNaN(parseFloat(s[key])) ? null : parseFloat(s[key]),
-  _tiebreaker: [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
-})).filter(s => s._value !== null)
-  .sort((a, b) => {
-    if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
-    return isReverse ? a._value - b._value : b._value - a._value;
-  });
-
-    sortedM.forEach((s, i) => s.rank = i + 1);
-    sortedF.forEach((s, i) => s.rank = i + 1);
-
-    return [...sortedM, ...sortedF];
-  }
-
-  // ✅ 나머지는 전체 기준 정렬
-  const sorted = [...grouped].map(s => {
-    const tiebreaker = event !== 'total'
-      ? [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
-      : 0;
-    return { ...s, _value: s[key], _tiebreaker: tiebreaker };
-  }).sort((a, b) => {
-    if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
-    return isReverse ? a._value - b._value : b._value - a._value;
-  });
-
-  sorted.forEach((s, i) => s.rank = i + 1);
-  return sorted;
-}
-
-
-
-
-function renderTable(list, key) {
-  return `<table><thead><tr>
-    <th>순위</th>
-    <th>수험번호</th>
-    <th>이름</th>
-    <th>학년</th>
-    <th>성별</th>
-    <th>${key === 'total_score' ? '점수' : '기록'}</th>
-  </tr></thead><tbody>
-    ${list.map(s => `<tr class="${s.rank === 1 ? 'gold' : s.rank === 2 ? 'silver' : s.rank === 3 ? 'bronze' : s.rank <= 10 ? 'highlight' : ''}">
-      <td>${s.rank}</td>
-      <td>${s.exam_number}</td>
-      <td>${s.name}</td>
-      <td>${s.grade}</td>
-      <td>${s.gender}</td>
-      <td>${s[key]}</td>
-    </tr>`).join('')}
-  </tbody></table>`;
-}
-
-
-    function glitchEffect() {
-  const wrapper = document.querySelector('.glitch-wrapper');
-  wrapper.classList.add('glitch-active');
-  setTimeout(() => wrapper.classList.remove('glitch-active'), 300);
-}
-
-
-    fetchData();
-    document.getElementById('filterInput').addEventListener('input', (e) => {
-  loadRankings();  // 🔥 입력이 바뀔 때마다 자동 갱신
-});
-
-
-    document.addEventListener('click', function(e) {
-  const tr = e.target.closest('tr');
-  if (!tr || !tr.parentElement.closest('table')) return;
-
-  // 같은 테이블 내에서만 제거 + 적용
-  const tbody = tr.parentElement;
-  tbody.querySelectorAll('tr').forEach(row => row.classList.remove('selected'));
-  tr.classList.add('selected');
-});
-
-  </script>
+// 초기 포커스 설정
+document.getElementById('password-input').focus();
+</script>
 </body>
 </html>
