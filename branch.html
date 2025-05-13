@@ -484,6 +484,13 @@ async function loadStudents() {
         </tr>
       `;
     } else {
+      list.sort((a, b) => {
+  const [groupA, numA] = a.exam_number?.split('-') ?? ['', 0];
+  const [groupB, numB] = b.exam_number?.split('-') ?? ['', 0];
+
+  if (groupA !== groupB) return groupA.localeCompare(groupB);
+  return parseInt(numA) - parseInt(numB);
+});
       list.forEach(s => {
         const tr = document.createElement('tr');
         tr.className = 'student-row';
