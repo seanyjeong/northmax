@@ -322,7 +322,10 @@
       <h2 style="margin-bottom: 16px;">지점 로그인</h2>
       <div class="input-field">
         <label for="branchInput">지점명</label>
-        <input type="text" id="branchInput" placeholder="지점명을 입력하세요">
+ <select id="branchInput">
+  <option value="">지점 선택</option>
+</select>
+
       </div>
       <div class="input-field">
         <label for="pwInput">비밀번호</label>
@@ -434,9 +437,28 @@
 </div>
 
 <script>
-const branchMap = { '일산': '1234', '행신': '1222' };
+const branchMap = { '강남':'1111','군포':'1111','동탄':'1111','부천':'1111','분당':'1111','서구':'1111','서초':'1111','수원':'1111','영통':'1111','용인':'1111','원주':'1111','의정부':'1111','이천':'1111','인천연수':'1111','인천계양':'1111','일산':'1111','포철.철원':'1111','하남':'1111' };
 let currentBranch = '';
 let swapExamNumber = '';
+
+// 드롭다운에 지점명 추가
+document.addEventListener('DOMContentLoaded', () => {
+  const branchSelect = document.getElementById('branchInput');
+  Object.keys(branchMap).forEach(branch => {
+    const option = document.createElement('option');
+    option.value = branch;
+    option.textContent = branch;
+    branchSelect.appendChild(option);
+  });
+
+  // 모바일 확대 방지
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    el.addEventListener('focus', () => {
+      document.querySelector('meta[name=viewport]').content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    });
+  });
+});
+
 
 // 초기화
 document.addEventListener('DOMContentLoaded', () => {
