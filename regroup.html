@@ -7,7 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css" rel="stylesheet" />
   <style>
     body {
-      max-width: 500px;
+      max-width: 900px;
       margin: auto;
       padding: 1em;
       text-align: center;
@@ -24,91 +24,141 @@
     th {
       background: #f0f0f0;
     }
+    #assignBtn {
+      margin-top: 1em;
+    }
   </style>
 </head>
 <body>
-  <h2>랜덤 조편성</h2>
-  <div id="total-students">학생 수 조회 중...</div>
-  <form id="groupForm">
-    <input type="number" name="totalGroups" placeholder="조 수 입력" min="1" required />
-    <button type="submit">조편성 시작</button>
+  <h2>전체 학생 조편성 (A/B 우선배치)</h2>
+
+  <form id="filterForm">
+    <select name="branch" id="branchSelect">
+      <option value="">-- 지점 선택 --</option>
+    </select>
+    <select name="grade">
+      <option value="">-- 학년 --</option>
+      <option value="1">1학년</option>
+      <option value="2">2학년</option>
+      <option value="3">3학년</option>
+      <option value="N">N수생</option>
+    </select>
+    <select name="gender">
+      <option value="">-- 성별 --</option>
+      <option value="남">남</option>
+      <option value="여">여</option>
+    </select>
+    <button type="submit">필터 적용</button>
   </form>
-  <div id="summary"></div>
 
-  <script>
-    const totalDisplay = document.getElementById('total-students');
-    const form = document.getElementById('groupForm');
-    const summary = document.getElementById('summary');
+  <form id="assignForm">
+    <table id="studentTable">
+      <thead>
+        <tr>
+          <th>선택</th>
+          <th>이름</th>
+          <th>학교</th>
+          <th>학년</th>
+          <th>성별</th>
+          <th>지점</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-    async function fetchStudentCount() {
-      try {
-        const res = await fetch('https://supermax.kr/feed/student-count');
-        const json = await res.json();
-        totalDisplay.textContent = `총 학생 수: ${json.total}명`;
-      } catch (e) {
-        totalDisplay.textContent = '❌ 학생 수 불러오기 실패';
-      }
+    <button id="assignBtn" type="submit">✅ 선택 학생 A/B조 우선배치 → 전체 조편성 실행</button>
+  </form>
+
+<script>
+  const branchSelect = document.getElementById('branchSelect');
+  const filterForm = document.getElementById('filterForm');
+  const assignForm = document.getElementById('assignForm');
+  const studentTable = document.getElementById('studentTable');
+  const tbody = studentTable.querySelector('tbody');
+
+  const selectedIds = new Set(); // ✅ 전역 상태로 선택 유지
+
+  async function loadBranches() {
+    const res = await fetch('https://supermax.kr/feed/all-branches');
+    const json = await res.json();
+    json.branches.forEach(branch => {
+      const option = document.createElement('option');
+      option.value = branch;
+      option.textContent = branch;
+      branchSelect.appendChild(option);
+    });
+  }
+
+  async function loadStudents(params = '') {
+    const res = await fetch(`https://supermax.kr/feed/search-students?${params}`);
+    const json = await res.json();
+    tbody.innerHTML = '';
+
+    if (!json.success || json.students.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">검색 결과 없음</td></tr>';
+      return;
     }
 
-    async function checkGroupAssigned() {
-      try {
-        const res = await fetch('https://supermax.kr/feed/check-group-assigned');
-        const json = await res.json();
-        if (json.assigned) {
-          const proceed = confirm('이미 조편성이 완료되었습니다. 다시 진행하시겠습니까?');
-          return proceed;
-        }
-        return true;
-      } catch (e) {
-        alert('❌ 조편성 여부 확인 실패');
-        return false;
-      }
-    }
-
-    async function fetchGroupSummary() {
-      try {
-        const res = await fetch('https://supermax.kr/feed/group-summary');
-        const json = await res.json();
-        let html = '<h3>조별 인원수</h3><table><tr><th>조</th><th>인원수</th></tr>';
-        json.forEach(row => {
-          html += `<tr><td>${row.group_no}조</td><td>${row.count}명</td></tr>`;
-        });
-        html += '</table>';
-        summary.innerHTML = html;
-      } catch (e) {
-        summary.innerHTML = '❌ 조별 요약 불러오기 실패';
-      }
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const ok = await checkGroupAssigned();
-      if (!ok) return;
-
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-      data.totalGroups = parseInt(data.totalGroups);
-
-      try {
-        const res = await fetch('https://supermax.kr/feed/assign-groups', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const json = await res.json();
-        if (json.success) {
-          alert(`✅ 조편성 완료! 총 ${json.assigned}명 배정됨`);
-          fetchGroupSummary();
-        } else {
-          alert('❌ 조편성 실패');
-        }
-      } catch (err) {
-        alert('❌ 서버 오류 발생');
-      }
+    json.students.forEach(stu => {
+      const tr = document.createElement('tr');
+      const checked = selectedIds.has(stu.id) ? 'checked' : '';
+      tr.innerHTML = `
+        <td><input type="checkbox" value="${stu.id}" ${checked} /></td>
+        <td>${stu.name}</td>
+        <td>${stu.school}</td>
+        <td>${stu.grade}</td>
+        <td>${stu.gender}</td>
+        <td>${stu.branch}</td>
+      `;
+      tbody.appendChild(tr);
     });
 
-    fetchStudentCount();
-    fetchGroupSummary();
-  </script>
+    // ✅ 이벤트 다시 연결
+    tbody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const id = parseInt(cb.value);
+        if (cb.checked) selectedIds.add(id);
+        else selectedIds.delete(id);
+      });
+    });
+  }
+
+  filterForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(filterForm);
+    const params = new URLSearchParams(formData).toString();
+    loadStudents(params);
+  });
+
+  assignForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (selectedIds.size === 0) {
+      alert('최소 한 명 이상 선택해주세요.');
+      return;
+    }
+
+    const ok = confirm(`${selectedIds.size}명 A/B조 우선배치 후 전체 조편성을 실행할까요?`);
+    if (!ok) return;
+
+    const res = await fetch('https://supermax.kr/feed/assign-groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ totalGroups: 10, preAssigned: [...selectedIds] })
+    });
+
+    const json = await res.json();
+    if (json.success) {
+      alert(`✅ 조편성 완료! 총 ${json.assigned}명`);
+      location.reload();
+    } else {
+      alert('❌ 조편성 실패');
+    }
+  });
+
+  loadBranches();
+  loadStudents(); // 초기 전체 로드
+</script>
+
 </body>
 </html>
