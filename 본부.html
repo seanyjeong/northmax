@@ -6,6 +6,7 @@
   <title>전체 기록 데이터</title>
   <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css" rel="stylesheet" />
   <style>
+    /* 기존 CSS 스타일 유지 */
     body {
       font-family: 'Pretendard', sans-serif;
       font-size: 14px;
@@ -72,6 +73,12 @@
     }
     button:hover {
       background-color: #3a5a9f;
+    }
+    button.error-btn {
+      background-color: #e74c3c;
+    }
+    button.error-btn:hover {
+      background-color: #c0392b;
     }
     .dashboard {
       display: grid;
@@ -160,11 +167,51 @@
     .nowrap {
       white-space: nowrap;
     }
+    .error-panel {
+      background-color: #ffebee;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid #e74c3c;
+    }
+    .error-panel h3 {
+      margin-top: 0;
+      color: #e74c3c;
+    }
+    .error-item {
+      margin-bottom: 5px;
+      padding: 5px;
+      background-color: #fce4ec;
+      border-radius: 4px;
+    }
+    .error-count {
+      display: inline-block;
+      background-color: #e74c3c;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      text-align: center;
+      line-height: 20px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    .refresh-info {
+      text-align: right;
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    .foul-record {
+      color: #e74c3c;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
-  <h1>전체 기록 데이터 조회</h1>
+  <h1>2025 맥스 전국실기챌린지 현황</h1>
+  <div class="refresh-info" id="refreshInfo">마지막 업데이트: <span id="lastUpdate">로드 중...</span></div>
 
   <div class="dashboard" id="dashboard">
     <!-- 대시보드 내용이 여기에 동적으로 로드됩니다 -->
@@ -177,12 +224,28 @@
   <div class="filter-box">
     <input type="text" id="filterInput" placeholder="이름, 지점, 수험번호 검색" />
     <button onclick="renderAllData()">검색</button>
+    <button class="error-btn" onclick="checkDataErrors()">기록 오류 확인</button>
   </div>
 
+  <div id="errorContainer"></div>
   <div id="dataContainer">로딩 중...</div>
 
   <script>
     let allData = [];
+    let refreshInterval;
+    const recordRanges = {
+      jump: { min: 130, max: 340 },
+      medicineball: { min: 2, max: 20 },
+      shuttle: { min: 7.00, max: 20.00 },
+      sit_reach: { min: -5, max: 40 },
+      back_strength: { min: 0, max: 300 }
+    };
+
+    function updateLastUpdateTime() {
+      const now = new Date();
+      document.getElementById('lastUpdate').textContent = 
+        `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    }
 
     function countCompletedTests(student) {
       let count = 0;
@@ -198,12 +261,39 @@
       return countCompletedTests(student) === 5;
     }
 
-    async function fetchData() {
-      const res = await fetch('https://supermax.kr/feed/all-records');
-      allData = await res.json();
-      renderDashboard();
-      renderGradeCards();
-      renderAllData();
+    function formatRecord(value) {
+      if (value === 'F' || value === 'f') {
+        return '<span class="foul-record">F</span>';
+      }
+      return value ?? '-';
+    }
+
+async function fetchData() {
+  try {
+    const res = await fetch('https://supermax.kr/feed/all-records');
+    allData = await res.json();
+    updateLastUpdateTime();
+    renderDashboard();
+    renderGradeCards();
+    renderAllData();// fetchData() 마지막 줄만 이렇게 바꿔줘
+setTimeout(() => {
+  checkDataErrors();
+}, 500); // 0.5초 정도만 늦게 실행
+
+
+  } catch (error) {
+    console.error('데이터 불러오기 실패:', error);
+  }
+}
+
+
+    function startAutoRefresh() {
+      // 기존 인터벌 제거
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      // 30초마다 새로고침
+      refreshInterval = setInterval(fetchData, 30000);
     }
 
     function renderDashboard() {
@@ -244,7 +334,7 @@
         <div class="stat-card">
           <h3>성별 비율</h3>
           <div class="value">${Math.round((males/total)*100)}:${Math.round((females/total)*100)}</div>
-          <div class="subtext">남 ${males}명 / 여 ${females}명</div>
+          <div class="subtext"><span class="gender-male">남 ${males}명</span> / <span class="gender-female">여 ${females}명</span></div>
           <div class="progress-container">
             <div class="progress-bar" style="width: ${Math.round((males/total)*100)}%"></div>
           </div>
@@ -264,19 +354,16 @@
         const total = gradeData.length;
         const males = gradeData.filter(d => d.gender === '남').length;
         const females = gradeData.filter(d => d.gender === '여').length;
-        const totalTestsCompleted = gradeData.reduce((sum, student) => sum + countCompletedTests(student), 0);
-        const completionRate = total > 0 ? Math.round((totalTestsCompleted / (total * 5)) * 100) : 0;
+        const maleRatio = total > 0 ? Math.round((males/total)*100) : 0;
+        const femaleRatio = total > 0 ? Math.round((females/total)*100) : 0;
         
         return `
           <div class="grade-card">
             <h3>${title}</h3>
             <div class="value">${total}명</div>
             <div class="subtext">
-              <span class="gender-male">남 ${males}명</span> / 
-              <span class="gender-female">여 ${females}명</span>
-            </div>
-            <div class="progress-container">
-              <div class="progress-bar" style="width: ${completionRate}%"></div>
+              <span class="gender-male">남 ${males}명 (${maleRatio}%)</span><br>
+              <span class="gender-female">여 ${females}명 (${femaleRatio}%)</span>
             </div>
           </div>
         `;
@@ -291,6 +378,47 @@
       
       document.getElementById('gradeCards').innerHTML = gradeCardsHTML;
     }
+
+   async function checkDataErrors() {
+  try {
+    const res = await fetch('https://supermax.kr/feed/record-errors');
+    const errors = await res.json();
+
+    if (!errors || errors.length === 0) {
+      document.getElementById('errorContainer').innerHTML = `
+        <div class="error-panel" style="background-color: #e8f5e9; border-left-color: #4caf50;">
+          <h3 style="color: #4caf50;">기록 오류 없음</h3>
+          <div>모든 기록이 정상 범위 내에 있습니다. (F는 파울로 허용됩니다)</div>
+        </div>
+      `;
+      return;
+    }
+
+    const errorList = errors.map(item => `
+      <div class="error-item">
+        <strong>${item.exam_number} - ${item.name}</strong><br>
+        ${item.errors.join('<br>')}
+      </div>
+    `).join('');
+
+    document.getElementById('errorContainer').innerHTML = `
+      <div class="error-panel">
+        <h3>기록 오류 발견 <span class="error-count">${errors.length}</span></h3>
+        <div>총 ${errors.length}명의 수험생에서 기록 오류가 발견되었습니다.</div>
+        ${errorList}
+      </div>
+    `;
+  } catch (error) {
+    console.error("❌ 오류 확인 실패:", error);
+    document.getElementById('errorContainer').innerHTML = `
+      <div class="error-panel">
+        <h3>오류 검사 실패</h3>
+        <div>서버에서 오류 정보를 불러오지 못했습니다.</div>
+      </div>
+    `;
+  }
+}
+
 
     function renderAllData() {
       const filterText = document.getElementById('filterInput').value.trim().toLowerCase();
@@ -310,15 +438,15 @@
           <td class="nowrap">${d.branch}</td>
           <td>${d.grade}</td>
           <td>${d.gender}</td>
-          <td>${d.jump_record ?? '-'}</td>
+          <td>${formatRecord(d.jump_record)}</td>
           <td>${d.jump_score ?? '-'}</td>
-          <td>${d.medicineball_record ?? '-'}</td>
+          <td>${formatRecord(d.medicineball_record)}</td>
           <td>${d.medicineball_score ?? '-'}</td>
-          <td>${d.shuttle_record ?? '-'}</td>
+          <td>${formatRecord(d.shuttle_record)}</td>
           <td>${d.shuttle_score ?? '-'}</td>
-          <td>${d.sit_reach_record ?? '-'}</td>
+          <td>${formatRecord(d.sit_reach_record)}</td>
           <td>${d.sit_reach_score ?? '-'}</td>
-          <td>${d.back_strength_record ?? '-'}</td>
+          <td>${formatRecord(d.back_strength_record)}</td>
           <td>${d.back_strength_score ?? '-'}</td>
           <td><strong>${d.total_score ?? '-'}</strong></td>
         </tr>
@@ -359,7 +487,10 @@
       document.getElementById('dataContainer').innerHTML = tableHTML;
     }
 
-    fetchData();
+    // 초기 로드 및 자동 새로고침 설정
+    fetchData().then(startAutoRefresh);
+    
+    // 검색 관련 이벤트 리스너
     document.getElementById('filterInput').addEventListener('input', (e) => {
       if (e.target.value === '') renderAllData();
     });
