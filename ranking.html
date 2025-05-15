@@ -147,9 +147,9 @@ tr.selected {
 <body>
   <header>
     <div class="glitch-wrapper" onclick="copyShareLink()">
-        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" alt="title" class="glitch-img base">
-        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" class="glitch-img red">
-        <img src="https://github.com/seanyjeong/northmax/blob/main/limit.png?raw=true" class="glitch-img blue">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/north.png?raw=true" alt="title" class="glitch-img base">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/north.png?raw=true" class="glitch-img red">
+        <img src="https://github.com/seanyjeong/northmax/blob/main/north.png?raw=true" class="glitch-img blue">
       </div>
       <div class="share-button" onclick="copyShareLink()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2-icon lucide-share-2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
@@ -301,36 +301,48 @@ function loadRankings() {
 
 
 
+function gradeOrder(grade) {
+  const nType = ['N', 'n', '재수', '기타', '', undefined, null];
+  const num = parseInt(grade);
+  if (!isNaN(num) && num >= 1 && num <= 3) return num;
+  return 99;
+}
 
 function rankify(fullList, event) {
   const key = event === 'total' ? 'total_score' : `${event}_record`;
   const isReverse = ['shuttle'].includes(event);
-
-  let grouped = fullList;
-
-  // ✅ 성별 분리 필요할 때만 나눠서 각각 rank 부여
   const mode = currentTab.startsWith('total_') ? currentTab.split('_')[1] : 'gender';
+
   if ((mode === 'gender' && event === 'total') || event !== 'total') {
     const males = fullList.filter(d => d.gender === '남');
     const females = fullList.filter(d => d.gender === '여');
+
+    const sortLogic = (a, b) => {
+      // 1. 점수/기록
+      if (a._value === b._value) {
+        // 2. 학년(낮은순)
+        const ga = gradeOrder(a.grade);
+        const gb = gradeOrder(b.grade);
+        if (ga === gb) {
+          // 3. 종목별 가중치
+          return b._tiebreaker - a._tiebreaker;
+        }
+        return ga - gb; // 오름차순(낮은 학년 먼저)
+      }
+      return isReverse ? a._value - b._value : b._value - a._value;
+    };
 
     const sortedM = males.map(s => ({
       ...s,
       _value: s[key],
       _tiebreaker: [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
-    })).sort((a, b) => {
-      if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
-      return isReverse ? a._value - b._value : b._value - a._value;
-    });
+    })).sort(sortLogic);
 
     const sortedF = females.map(s => ({
       ...s,
       _value: s[key],
       _tiebreaker: [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
-    })).sort((a, b) => {
-      if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
-      return isReverse ? a._value - b._value : b._value - a._value;
-    });
+    })).sort(sortLogic);
 
     sortedM.forEach((s, i) => s.rank = i + 1);
     sortedF.forEach((s, i) => s.rank = i + 1);
@@ -338,14 +350,21 @@ function rankify(fullList, event) {
     return [...sortedM, ...sortedF];
   }
 
-  // ✅ 나머지는 전체 기준 정렬
-  const sorted = [...grouped].map(s => {
+  // 전체 기준 정렬 (예비반 등)
+  const sorted = [...fullList].map(s => {
     const tiebreaker = event !== 'total'
       ? [s.jump_score || 0, s.medicineball_score || 0, s.shuttle_score || 0].reduce((a, b) => a + b, 0)
       : 0;
     return { ...s, _value: s[key], _tiebreaker: tiebreaker };
   }).sort((a, b) => {
-    if (a._value === b._value) return b._tiebreaker - a._tiebreaker;
+    if (a._value === b._value) {
+      const ga = gradeOrder(a.grade);
+      const gb = gradeOrder(b.grade);
+      if (ga === gb) {
+        return b._tiebreaker - a._tiebreaker;
+      }
+      return ga - gb;
+    }
     return isReverse ? a._value - b._value : b._value - a._value;
   });
 
