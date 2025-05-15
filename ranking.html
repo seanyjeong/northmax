@@ -376,11 +376,29 @@ function rankify(fullList, event) {
 
 
 function renderTable(list, key) {
-  return `<table><thead><tr><th>순위</th><th>수험번호</th><th>이름</th><th>지점</th><th>학년</th><th>성별</th><th>${key === 'total_score' ? '점수' : '기록'}</th></tr></thead><tbody>
-    ${list.map(s => `<tr class="${s.rank === 1 ? 'gold' : s.rank === 2 ? 'silver' : s.rank === 3 ? 'bronze' : s.rank <= 10 ? 'highlight' : ''}">
-      <td>${s.rank}</td><td>${s.exam_number}</td><td>${s.name}</td><td>${s.branch}</td><td>${s.grade}</td><td>${s.gender}</td><td>${s[key]}</td></tr>`).join('')}
+  return `<table><thead><tr>
+    <th>순위</th>
+    <th>수험번호</th>
+    <th>이름</th>
+    <th>학년</th>
+    <th>성별</th>
+    <th>${key === 'total_score' ? '점수' : '기록'}</th>
+  </tr></thead><tbody>
+    ${list.map(s => `<tr class="${
+      s.rank === 1 ? 'gold' : 
+      s.rank === 2 ? 'silver' : 
+      s.rank === 3 ? 'bronze' : 
+      s.rank <= 10 ? 'highlight' : ''}">
+      <td>${s.rank}</td>
+      <td>${s.exam_number}</td>
+      <td>${s.name}</td>
+      <td>${s.grade}</td>
+      <td>${s.gender}</td>
+      <td>${s[key]}</td>
+    </tr>`).join('')}
   </tbody></table>`;
 }
+
 
     function glitchEffect() {
   const wrapper = document.querySelector('.glitch-wrapper');
