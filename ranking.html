@@ -293,7 +293,7 @@ function loadRankings() {
     html += `<div class="section"><h2>${displayNames[event]} 남자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(maleList, key)}</div>`;
     html += `<div class="section"><h2>${displayNames[event]} 여자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(femaleList, key)}</div>`;
   } else {
-    html += `<div class="section"><h2>${displayNames[event]} ${mode === 'yebi' ? '예비반' : '전체'} ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(displayList, key)}</div>`;
+    html += `<div class="section"><h2>${displayNames[event]} ${mode === 'yebi' ? '선행반' : '전체'} ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(displayList, key)}</div>`;
   }
 
   document.getElementById('rankings').innerHTML = html;
