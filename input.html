@@ -774,7 +774,7 @@ async function submitRecord() {
       const recordField = getField(currentEvent, 'record');
       const student = studentList.find(s => s.exam_number == selectedExam);
       if (student) student[recordField] = record;
-      
+      await loadExams();  
       renderExamList();
     } else {
       result.textContent = '저장에 실패했습니다. 다시 시도해주세요.';
