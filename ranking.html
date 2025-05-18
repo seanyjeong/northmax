@@ -256,7 +256,8 @@ function loadRankings() {
   };
 
   let event = selected;
-  let mode = 'gender';
+  let mode = 'gender'; // default
+
   if (selected.startsWith('total_')) {
     event = 'total';
     mode = selected.split('_')[1];
@@ -275,29 +276,54 @@ function loadRankings() {
 
   const rankedGroup = rankify(baseGroup, event);
 
-  let displayList = rankedGroup;
-  if (filterText) {
-    displayList = rankedGroup.filter(d => {
-      return d.branch?.toLowerCase().includes(filterText) || d.name?.toLowerCase().includes(filterText);
-    });
-  } else {
-    displayList = rankedGroup.slice(0, 30);
-  }
-
   let html = '';
 
-  // ✅ 종목일 경우에도 남/여 분리 출력 추가
-  if (mode === 'gender') {
-    const maleList = displayList.filter(d => d.gender === '남');
-    const femaleList = displayList.filter(d => d.gender === '여');
+  // ✅ total_all → 전체 통합 상위 30
+  if (selected === 'total_all') {
+    const displayList = filterText
+      ? rankedGroup.filter(d =>
+          d.branch?.toLowerCase().includes(filterText) || d.name?.toLowerCase().includes(filterText)
+        )
+      : rankedGroup.slice(0, 30);
+
+    html += `<div class="section"><h2>${displayNames[event]} 전체 TOP30</h2>${renderTable(displayList, key)}</div>`;
+  }
+
+  // ✅ total_gender or 종목별 → 남녀 각각 30명씩
+  else if (mode === 'gender' || ['jump', 'medicineball', 'shuttle', 'sit_reach', 'back_strength'].includes(selected)) {
+    let maleList = rankedGroup.filter(d => d.gender === '남');
+    let femaleList = rankedGroup.filter(d => d.gender === '여');
+
+    if (filterText) {
+      maleList = maleList.filter(d =>
+        d.branch?.toLowerCase().includes(filterText) || d.name?.toLowerCase().includes(filterText)
+      );
+      femaleList = femaleList.filter(d =>
+        d.branch?.toLowerCase().includes(filterText) || d.name?.toLowerCase().includes(filterText)
+      );
+    } else {
+      maleList = maleList.slice(0, 30);
+      femaleList = femaleList.slice(0, 30);
+    }
+
     html += `<div class="section"><h2>${displayNames[event]} 남자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(maleList, key)}</div>`;
     html += `<div class="section"><h2>${displayNames[event]} 여자 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(femaleList, key)}</div>`;
-  } else {
-    html += `<div class="section"><h2>${displayNames[event]} ${mode === 'yebi' ? '선행반' : '전체'} ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(displayList, key)}</div>`;
+  }
+
+  // ✅ total_yebi → 선행반 전체 (남녀 통합)
+  else if (mode === 'yebi') {
+    const displayList = filterText
+      ? rankedGroup.filter(d =>
+          d.branch?.toLowerCase().includes(filterText) || d.name?.toLowerCase().includes(filterText)
+        )
+      : rankedGroup.slice(0, 30);
+
+    html += `<div class="section"><h2>${displayNames[event]} 선행반 ${filterText ? '전체 순위 중' : 'TOP30'}</h2>${renderTable(displayList, key)}</div>`;
   }
 
   document.getElementById('rankings').innerHTML = html;
 }
+
 
 
 
@@ -427,4 +453,4 @@ function renderTable(list, key) {
 
   </script>
 </body>
-</html>
+</html> 
