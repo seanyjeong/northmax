@@ -448,46 +448,40 @@ document.getElementById('password-form').addEventListener('submit', function(e) 
   const password = document.getElementById('password-input').value;
   
   if (PASSWORD_MAP[password]) {
-    currentEventType = PASSWORD_MAP[password];
-    
-    // 종목 선택 옵션 설정
-    const eventSelect = document.getElementById('eventSelect');
-    eventSelect.innerHTML = '';
-    
-    if (currentEventType === 'all') {
-      // 전체 접근 가능
-      allowedEvents = [...EVENTS];
-      allowedEvents.forEach(event => {
-        const opt = document.createElement('option');
-        opt.value = event.value;
-        opt.textContent = event.name;
-        opt.className = event.class;
-        eventSelect.appendChild(opt);
-      });
-    } else {
-      // 특정 종목만 접근 가능
-      allowedEvents = EVENTS.filter(event => event.value === currentEventType);
+  currentEventType = PASSWORD_MAP[password];
+
+  const eventSelect = document.getElementById('eventSelect');
+  eventSelect.innerHTML = '';
+
+  if (currentEventType === 'all') {
+    allowedEvents = [...EVENTS];
+    allowedEvents.forEach(event => {
       const opt = document.createElement('option');
-      const selectedEvent = EVENTS.find(event => event.value === currentEventType);
-      opt.value = selectedEvent.value;
-      opt.textContent = selectedEvent.name;
-      opt.className = selectedEvent.class;
+      opt.value = event.value;
+      opt.textContent = event.name;
+      opt.className = event.class;
       eventSelect.appendChild(opt);
-      eventSelect.disabled = true; // 선택 불가능하게 설정
-    }
-    
-    document.getElementById('password-modal').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-    document.getElementById('event-title').textContent = `${allowedEvents[0].name} 기록 시스템`;
-    loadGroupList(); // 비밀번호 확인 후 데이터 로딩 시작
-    document.getElementById('recordInput').focus();
+    });
+    currentEvent = allowedEvents[0].value; // ✅ 추가
   } else {
-    const errorEl = document.getElementById('password-error');
-    errorEl.style.display = 'block';
-    errorEl.textContent = '비밀번호가 올바르지 않습니다. 다시 시도해주세요.';
-    document.getElementById('password-input').value = '';
-    document.getElementById('password-input').focus();
+    allowedEvents = EVENTS.filter(event => event.value === currentEventType);
+    const opt = document.createElement('option');
+    const selectedEvent = EVENTS.find(event => event.value === currentEventType);
+    opt.value = selectedEvent.value;
+    opt.textContent = selectedEvent.name;
+    opt.className = selectedEvent.class;
+    eventSelect.appendChild(opt);
+    eventSelect.disabled = true;
+    currentEvent = selectedEvent.value; // ✅ 이 줄 추가!
   }
+
+  document.getElementById('password-modal').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('event-title').textContent = `${allowedEvents[0].name} 기록 시스템`;
+  loadGroupList();
+  document.getElementById('recordInput').focus();
+}
+
 });
 
 // 필드 매핑 함수
